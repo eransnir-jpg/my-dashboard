@@ -1,490 +1,709 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  Globe, Mail, Github, Youtube, Twitter, Linkedin, Rss,
-  Music, BookOpen, Code, Briefcase, ShoppingCart, Camera,
-  Coffee, Cloud, Zap, Star, Heart, Home, Settings, X,
-  Check, Plus, Trash2, Edit3, ExternalLink, ChevronDown
-} from "lucide-react";
-
-const ICON_OPTIONS = [
-  { name: "Globe", icon: Globe }, { name: "Mail", icon: Mail },
-  { name: "Github", icon: Github }, { name: "Youtube", icon: Youtube },
-  { name: "Twitter", icon: Twitter }, { name: "Linkedin", icon: Linkedin },
-  { name: "Rss", icon: Rss }, { name: "Music", icon: Music },
-  { name: "BookOpen", icon: BookOpen }, { name: "Code", icon: Code },
-  { name: "Briefcase", icon: Briefcase }, { name: "ShoppingCart", icon: ShoppingCart },
-  { name: "Camera", icon: Camera }, { name: "Coffee", icon: Coffee },
-  { name: "Cloud", icon: Cloud }, { name: "Zap", icon: Zap },
-  { name: "Star", icon: Star }, { name: "Heart", icon: Heart },
-  { name: "Home", icon: Home },
-];
-
-const COLOR_PRESETS = [
-  "#1a1a2e", "#16213e", "#0f3460", "#533483",
-  "#2d6a4f", "#1b4332", "#6b3a2a", "#7b2d00",
-  "#1a3a4a", "#2c3e50", "#4a1942", "#1a472a",
-  "#3d0000", "#003049", "#370617", "#212529",
-];
-
-const DEFAULT_TILES = [
-  { id: 1, name: "Gmail", url: "https://mail.google.com", icon: "Mail", color: "#1a3a4a" },
-  { id: 2, name: "GitHub", url: "https://github.com", icon: "Github", color: "#1b1f23" },
-  { id: 3, name: "YouTube", url: "https://youtube.com", icon: "Youtube", color: "#3d0000" },
-  { id: 4, name: "LinkedIn", url: "https://linkedin.com", icon: "Linkedin", color: "#003049" },
-  { id: 5, name: "Twitter / X", url: "https://x.com", icon: "Twitter", color: "#0f3460" },
-  { id: 6, name: "Google", url: "https://google.com", icon: "Globe", color: "#2d6a4f" },
-];
-
-const STORAGE_KEY = "eran_dashboard_tiles";
-
-function getIconComponent(name) {
-  const found = ICON_OPTIONS.find((i) => i.name === name);
-  return found ? found.icon : Globe;
-}
-
-function useClock() {
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
-}
-
-function EditModal({ tile, onSave, onClose }) {
-  const [form, setForm] = useState({
-    name: tile?.name || "",
-    url: tile?.url || "",
-    icon: tile?.icon || "Globe",
-    color: tile?.color || "#1a1a2e",
-  });
-  const [iconOpen, setIconOpen] = useState(false);
-  const [customColor, setCustomColor] = useState(form.color);
-
-  const IconComp = getIconComponent(form.icon);
-
-  return (
-    <div
-      style={{ fontFamily: "'DM Sans', sans-serif" }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-    >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div
-        className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl border border-white/10"
-        style={{ background: "#0d0d14" }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-white text-lg font-semibold tracking-wide">
-            {tile ? "ערוך אריח" : "אריח חדש"}
-          </h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Preview */}
-        <div className="flex justify-center mb-6">
-          <div
-            className="w-20 h-20 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-lg transition-all duration-300"
-            style={{ background: form.color, border: "1px solid rgba(255,255,255,0.1)" }}
-          >
-            <IconComp size={28} color="rgba(255,255,255,0.9)" />
-            <span className="text-white/80 text-xs truncate max-w-[72px] text-center">
-              {form.name || "שם"}
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {/* Name */}
-          <div>
-            <label className="text-white/50 text-xs uppercase tracking-widest mb-1 block">שם</label>
-            <input
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-yellow-400/50 transition-colors"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="שם האתר"
-              dir="rtl"
-            />
-          </div>
-
-          {/* URL */}
-          <div>
-            <label className="text-white/50 text-xs uppercase tracking-widest mb-1 block">קישור</label>
-            <input
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-yellow-400/50 transition-colors"
-              value={form.url}
-              onChange={(e) => setForm({ ...form, url: e.target.value })}
-              placeholder="https://..."
-              dir="ltr"
-            />
-          </div>
-
-          {/* Icon Picker */}
-          <div>
-            <label className="text-white/50 text-xs uppercase tracking-widest mb-1 block">אייקון</label>
-            <div className="relative">
-              <button
-                onClick={() => setIconOpen(!iconOpen)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm flex items-center justify-between hover:border-white/30 transition-colors"
-              >
-                <span className="flex items-center gap-2">
-                  <IconComp size={16} />
-                  {form.icon}
-                </span>
-                <ChevronDown size={14} className={`transition-transform ${iconOpen ? "rotate-180" : ""}`} />
-              </button>
-              {iconOpen && (
-                <div className="absolute top-full mt-1 w-full bg-[#0d0d14] border border-white/10 rounded-xl p-2 grid grid-cols-5 gap-1 z-10 shadow-2xl max-h-40 overflow-y-auto">
-                  {ICON_OPTIONS.map(({ name, icon: Ic }) => (
-                    <button
-                      key={name}
-                      onClick={() => { setForm({ ...form, icon: name }); setIconOpen(false); }}
-                      className={`p-2 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors ${form.icon === name ? "bg-yellow-400/20 text-yellow-400" : "text-white/60"}`}
-                      title={name}
-                    >
-                      <Ic size={16} />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Color */}
-          <div>
-            <label className="text-white/50 text-xs uppercase tracking-widest mb-1 block">צבע רקע</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {COLOR_PRESETS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => { setForm({ ...form, color: c }); setCustomColor(c); }}
-                  className="w-7 h-7 rounded-lg border-2 transition-all"
-                  style={{
-                    background: c,
-                    borderColor: form.color === c ? "#facc15" : "rgba(255,255,255,0.1)",
-                  }}
-                />
-              ))}
-              <label className="w-7 h-7 rounded-lg border-2 border-white/20 overflow-hidden cursor-pointer hover:border-white/40 transition-colors" title="צבע מותאם">
-                <input
-                  type="color"
-                  className="opacity-0 w-full h-full cursor-pointer"
-                  value={customColor}
-                  onChange={(e) => { setCustomColor(e.target.value); setForm({ ...form, color: e.target.value }); }}
-                />
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white hover:border-white/30 text-sm transition-colors"
-          >
-            ביטול
-          </button>
-          <button
-            onClick={() => onSave(form)}
-            className="flex-1 py-2.5 rounded-xl bg-yellow-400 text-black font-semibold text-sm hover:bg-yellow-300 transition-colors flex items-center justify-center gap-2"
-          >
-            <Check size={16} />
-            שמור
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Tile({ tile, editMode, onEdit, onDelete }) {
-  const IconComp = getIconComponent(tile.icon);
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      className="relative group"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <a
-        href={editMode ? undefined : tile.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={editMode ? (e) => e.preventDefault() : undefined}
-        className="block rounded-2xl p-5 transition-all duration-300 cursor-pointer select-none"
-        style={{
-          background: tile.color,
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: hovered && !editMode
-            ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(250,204,21,0.2)`
-            : "0 4px 16px rgba(0,0,0,0.3)",
-          transform: hovered && !editMode ? "translateY(-4px) scale(1.02)" : "translateY(0) scale(1)",
-        }}
-      >
-        <div className="flex flex-col h-full min-h-[80px] justify-between">
-          <div className="flex items-start justify-between">
-            <div
-              className="p-2 rounded-xl"
-              style={{ background: "rgba(255,255,255,0.08)" }}
-            >
-              <IconComp size={22} color="rgba(255,255,255,0.85)" />
-            </div>
-            {!editMode && (
-              <ExternalLink
-                size={12}
-                color="rgba(255,255,255,0.2)"
-                className="group-hover:opacity-100 opacity-0 transition-opacity mt-1"
-              />
-            )}
-          </div>
-          <div>
-            <p className="text-white font-medium text-sm mt-3 leading-tight">{tile.name}</p>
-            <p className="text-white/35 text-xs mt-0.5 truncate">{tile.url.replace(/^https?:\/\//, "")}</p>
-          </div>
-        </div>
-      </a>
-
-      {/* Edit mode overlay */}
-      {editMode && (
-        <div
-          className="absolute inset-0 rounded-2xl flex items-center justify-center gap-2 transition-all duration-200"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)" }}
-        >
-          <button
-            onClick={() => onEdit(tile)}
-            className="p-2.5 rounded-xl bg-yellow-400/90 hover:bg-yellow-400 text-black transition-colors"
-          >
-            <Edit3 size={16} />
-          </button>
-          <button
-            onClick={() => onDelete(tile.id)}
-            className="p-2.5 rounded-xl bg-red-500/80 hover:bg-red-500 text-white transition-colors"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function Dashboard() {
-  const now = useClock();
-  const [tiles, setTiles] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_TILES;
-    } catch { return DEFAULT_TILES; }
-  });
-  const [editMode, setEditMode] = useState(false);
-  const [modal, setModal] = useState(null); // null | { tile } | { isNew: true }
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tiles)); } catch {}
-  }, [tiles]);
-
-  const dayNames = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
-  const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
-
-  const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-  const dateStr = `יום ${dayNames[now.getDay()]}, ${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-
-  function handleSave(form) {
-    if (modal?.isNew) {
-      setTiles((prev) => [...prev, { ...form, id: Date.now() }]);
-    } else {
-      setTiles((prev) => prev.map((t) => t.id === modal.tile.id ? { ...t, ...form } : t));
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>הדשבורד של ערן</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    :root {
+      --gold: #facc15;
+      --gold-dim: rgba(250, 204, 21, 0.15);
+      --gold-border: rgba(250, 204, 21, 0.3);
+      --surface: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.08);
+      --text-muted: rgba(255, 255, 255, 0.35);
+      --text-dim: rgba(255, 255, 255, 0.55);
     }
-    setModal(null);
-  }
-
-  function handleDelete(id) {
-    setTiles((prev) => prev.filter((t) => t.id !== id));
-  }
-
-  return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #080810; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .tile-in { animation: fadeIn 0.4s ease both; }
-        @keyframes pulse-dot { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
-        .pulse { animation: pulse-dot 2s ease-in-out infinite; }
-      `}</style>
-
-      <div
-        dir="rtl"
-        style={{
-          minHeight: "100vh",
-          background: "radial-gradient(ellipse at 20% 0%, #1a1040 0%, #080810 50%, #0a0a18 100%)",
-          fontFamily: "'DM Sans', sans-serif",
-          color: "white",
-          padding: "0",
-        }}
-      >
-        {/* Subtle grid overlay */}
-        <div
-          style={{
-            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
-        />
-
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto", padding: "32px 24px" }}>
-
-          {/* Header */}
-          <header style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 56 }}>
-            {/* Right: Greeting */}
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <div className="pulse" style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80" }} />
-                <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                  ברוך הבא
-                </span>
-              </div>
-              <h1 style={{ fontSize: 26, fontWeight: 600, color: "white", letterSpacing: "-0.02em" }}>
-                שלום, <span style={{ color: "#facc15" }}>ערן</span> ✦
-              </h1>
-            </div>
-
-            {/* Left: Clock */}
-            <div style={{ textAlign: "left" }}>
-              <div
-                style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontSize: 28,
-                  fontWeight: 500,
-                  color: "white",
-                  letterSpacing: "0.05em",
-                  lineHeight: 1,
-                  textAlign: "left",
-                }}
-              >
-                {timeStr}
-              </div>
-              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, letterSpacing: "0.08em", marginTop: 4, textAlign: "left" }}>
-                {dateStr}
-              </div>
-            </div>
-          </header>
-
-          {/* Section title + controls */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 3, height: 18, borderRadius: 2, background: "#facc15" }} />
-              <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                קישורים מהירים
-              </span>
-              <span style={{
-                background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)",
-                fontSize: 10, padding: "2px 8px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.08)"
-              }}>
-                {tiles.length}
-              </span>
-            </div>
-
-            <div style={{ display: "flex", gap: 8 }}>
-              {editMode && (
-                <button
-                  onClick={() => setModal({ isNew: true })}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "8px 16px", borderRadius: 12,
-                    background: "rgba(250,204,21,0.12)", border: "1px solid rgba(250,204,21,0.3)",
-                    color: "#facc15", fontSize: 12, cursor: "pointer", fontWeight: 500,
-                    transition: "all 0.2s",
-                  }}
-                >
-                  <Plus size={14} /> הוסף אריח
-                </button>
-              )}
-              <button
-                onClick={() => setEditMode(!editMode)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "8px 16px", borderRadius: 12,
-                  background: editMode ? "rgba(250,204,21,0.15)" : "rgba(255,255,255,0.05)",
-                  border: editMode ? "1px solid rgba(250,204,21,0.4)" : "1px solid rgba(255,255,255,0.08)",
-                  color: editMode ? "#facc15" : "rgba(255,255,255,0.5)",
-                  fontSize: 12, cursor: "pointer", fontWeight: 500,
-                  transition: "all 0.2s",
-                }}
-              >
-                <Settings size={14} />
-                {editMode ? "סיום עריכה" : "הגדרות"}
-              </button>
-            </div>
-          </div>
-
-          {/* Edit mode banner */}
-          {editMode && (
-            <div style={{
-              marginBottom: 16, padding: "10px 16px", borderRadius: 12,
-              background: "rgba(250,204,21,0.06)", border: "1px solid rgba(250,204,21,0.15)",
-              color: "rgba(250,204,21,0.7)", fontSize: 12, textAlign: "center",
-            }}>
-              מצב עריכה פעיל — לחץ על אריח כדי לערוך אותו
-            </div>
-          )}
-
-          {/* Tiles Grid */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-            gap: 14,
-          }}>
-            {tiles.map((tile, i) => (
-              <div
-                key={tile.id}
-                className="tile-in"
-                style={{ animationDelay: `${i * 0.05}s` }}
-              >
-                <Tile
-                  tile={tile}
-                  editMode={editMode}
-                  onEdit={(t) => setModal({ tile: t })}
-                  onDelete={handleDelete}
-                />
-              </div>
-            ))}
-          </div>
-
-          {tiles.length === 0 && (
-            <div style={{
-              textAlign: "center", padding: "60px 20px",
-              color: "rgba(255,255,255,0.2)", fontSize: 14,
-            }}>
-              אין אריחים עדיין — לחץ על "הוסף אריח" כדי להתחיל
-            </div>
-          )}
-
-          {/* Footer */}
-          <div style={{
-            marginTop: 64, textAlign: "center",
-            color: "rgba(255,255,255,0.12)", fontSize: 11, letterSpacing: "0.1em",
-          }}>
-            ✦ הדשבורד האישי של ערן ✦
-          </div>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      min-height: 100vh;
+      font-family: 'DM Sans', sans-serif;
+      background: #080810;
+      color: white;
+      overflow-x: hidden;
+    }
+    body {
+      background:
+        radial-gradient(ellipse 80% 50% at 15% -5%, #1a1040 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, #0f2040 0%, transparent 60%),
+        #080810;
+    }
+    /* Grid texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+    #app { position: relative; z-index: 1; }
+    /* Clock font */
+    #clock {
+      font-family: 'DM Mono', monospace;
+      font-size: clamp(22px, 4vw, 32px);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      color: white;
+    }
+    /* Tile styles */
+    .tile {
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: var(--tile-color, #1a1a2e);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      min-height: 120px;
+      position: relative;
+      overflow: hidden;
+    }
+    .tile::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .tile:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(250,204,21,0.18);
+    }
+    .tile.edit-mode {
+      cursor: default;
+    }
+    .tile.edit-mode:hover {
+      transform: none;
+      box-shadow: none;
+    }
+    .tile-icon-wrap {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .tile-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.9);
+      margin-top: auto;
+      padding-top: 10px;
+    }
+    .tile-url {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Edit overlay on tile */
+    .tile-edit-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      z-index: 2;
+    }
+    .edit-mode-active .tile-edit-overlay {
+      display: flex;
+    }
+    /* Tile grid */
+    #tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 14px;
+    }
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.5s ease both; }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.25; }
+    }
+    .pulse-dot { animation: pulseDot 2.2s ease-in-out infinite; }
+    /* Modal */
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #modal-overlay.open { display: flex; }
+    #modal-box {
+      background: #0d0d16;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      padding: 28px;
+      position: relative;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    }
+    .modal-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .modal-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: white;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .modal-input:focus {
+      border-color: rgba(250,204,21,0.4);
+    }
+    /* Icon picker */
+    #icon-picker-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0; left: 0;
+      background: #0d0d16;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 10px;
+      display: none;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      z-index: 10;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #icon-picker-dropdown.open { display: grid; }
+    .icon-opt {
+      padding: 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.5);
+      transition: background 0.15s, color 0.15s;
+      background: transparent;
+      border: none;
+    }
+    .icon-opt:hover { background: rgba(255,255,255,0.08); color: white; }
+    .icon-opt.selected { background: rgba(250,204,21,0.15); color: var(--gold); }
+    /* Color swatches */
+    .color-swatch {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .color-swatch:hover { transform: scale(1.15); }
+    .color-swatch.selected { border-color: var(--gold); }
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 9px 18px;
+      border-radius: 12px; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+      border: none; outline: none;
+    }
+    .btn-gold {
+      background: var(--gold);
+      color: #000;
+    }
+    .btn-gold:hover { background: #fde047; }
+    .btn-ghost {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.55);
+    }
+    .btn-ghost:hover { color: white; border-color: rgba(255,255,255,0.25); }
+    .btn-icon {
+      width: 36px; height: 36px; padding: 0;
+      border-radius: 10px;
+    }
+    .btn-edit-tile {
+      background: rgba(250,204,21,0.9);
+      color: #000;
+    }
+    .btn-edit-tile:hover { background: var(--gold); }
+    .btn-del-tile {
+      background: rgba(239,68,68,0.8);
+      color: white;
+    }
+    .btn-del-tile:hover { background: #ef4444; }
+    /* Settings active */
+    .btn-settings-active {
+      background: rgba(250,204,21,0.12) !important;
+      border-color: rgba(250,204,21,0.35) !important;
+      color: var(--gold) !important;
+    }
+    /* Tile preview in modal */
+    #tile-preview {
+      width: 80px; height: 80px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 6px;
+      transition: background 0.3s;
+    }
+    #preview-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.75);
+      font-weight: 500;
+      max-width: 68px;
+      text-align: center;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    /* Edit mode banner */
+    #edit-banner {
+      display: none;
+      margin-bottom: 14px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: rgba(250,204,21,0.06);
+      border: 1px solid rgba(250,204,21,0.15);
+      color: rgba(250,204,21,0.65);
+      font-size: 12px;
+      text-align: center;
+    }
+    #edit-banner.visible { display: block; }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+    /* Add tile placeholder */
+    .tile-add-placeholder {
+      border-radius: 18px;
+      border: 1.5px dashed rgba(255,255,255,0.1);
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      color: rgba(255,255,255,0.2);
+      font-size: 13px;
+      gap: 8px;
+    }
+    .tile-add-placeholder:hover {
+      border-color: rgba(250,204,21,0.3);
+      background: rgba(250,204,21,0.04);
+      color: rgba(250,204,21,0.5);
+    }
+    @media (max-width: 480px) {
+      #tiles-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app" class="min-h-screen">
+  <div style="max-width:960px; margin:0 auto; padding:32px 20px;">
+    <!-- ===== HEADER ===== -->
+    <header class="flex items-start justify-between mb-14 fade-up">
+      <!-- Right: Greeting -->
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="pulse-dot" style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
+          <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);">ברוך הבא</span>
+        </div>
+        <h1 style="font-size:clamp(20px,3.5vw,28px);font-weight:600;letter-spacing:-0.02em;">
+          שלום, <span style="color:var(--gold);">ערן</span> ✦
+        </h1>
+      </div>
+      <!-- Left: Clock -->
+      <div style="text-align:left;">
+        <div id="clock">00:00:00</div>
+        <div id="date-display" style="font-size:11px;letter-spacing:0.08em;color:var(--text-muted);margin-top:5px;text-align:left;"></div>
+      </div>
+    </header>
+    <!-- ===== SECTION BAR ===== -->
+    <div class="flex items-center justify-between mb-4 fade-up" style="animation-delay:0.1s">
+      <div class="flex items-center gap-2">
+        <div style="width:3px;height:18px;border-radius:2px;background:var(--gold);"></div>
+        <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">קישורים מהירים</span>
+        <span id="tile-count" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.28);font-size:10px;padding:2px 9px;border-radius:99px;border:1px solid var(--border);">0</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Add tile button (only in edit mode) -->
+        <button id="btn-add" onclick="openModal(null)"
+          class="btn btn-ghost"
+          style="display:none;border-color:var(--gold-border);color:var(--gold);background:var(--gold-dim);">
+          <i data-lucide="plus" style="width:14px;height:14px;"></i>
+          הוסף אריח
+        </button>
+        <!-- Settings toggle -->
+        <button id="btn-settings" onclick="toggleEditMode()" class="btn btn-ghost" style="border:1px solid rgba(255,255,255,0.1);">
+          <i data-lucide="settings" style="width:14px;height:14px;"></i>
+          הגדרות
+        </button>
+      </div>
+    </div>
+    <!-- Edit mode banner -->
+    <div id="edit-banner">✎ מצב עריכה פעיל — לחץ על אריח כדי לערוך אותו</div>
+    <!-- ===== TILES GRID ===== -->
+    <div id="tiles-grid" class="fade-up" style="animation-delay:0.2s;"></div>
+    <!-- Footer -->
+    <div class="mt-16 text-center fade-up" style="animation-delay:0.35s;color:rgba(255,255,255,0.1);font-size:11px;letter-spacing:0.1em;">
+      ✦ הדשבורד האישי של ערן ✦
+    </div>
+  </div>
+</div>
+<!-- ===== MODAL ===== -->
+<div id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div id="modal-box">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between mb-6">
+      <h2 id="modal-title" style="font-size:17px;font-weight:600;color:white;"></h2>
+      <button onclick="closeModal()" class="btn btn-ghost btn-icon">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+    <!-- Tile Preview -->
+    <div class="flex justify-center mb-6">
+      <div id="tile-preview">
+        <i id="preview-icon" data-lucide="globe" style="width:26px;height:26px;color:rgba(255,255,255,0.85);"></i>
+        <span id="preview-label">שם</span>
+      </div>
+    </div>
+    <!-- Form -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- Name -->
+      <div>
+        <label class="modal-label">שם האתר</label>
+        <input id="f-name" type="text" class="modal-input" placeholder="לדוגמה: Gmail" dir="rtl"
+          oninput="updatePreview()" />
+      </div>
+      <!-- URL -->
+      <div>
+        <label class="modal-label">כתובת URL</label>
+        <input id="f-url" type="url" class="modal-input" placeholder="https://..." dir="ltr" />
+      </div>
+      <!-- Icon -->
+      <div>
+        <label class="modal-label">אייקון</label>
+        <div style="position:relative;">
+          <button id="icon-trigger" onclick="toggleIconPicker()" class="modal-input flex items-center justify-between" style="cursor:pointer;text-align:right;">
+            <span class="flex items-center gap-2" style="color:white;">
+              <i id="icon-trigger-icon" data-lucide="globe" style="width:15px;height:15px;"></i>
+              <span id="icon-trigger-label">Globe</span>
+            </span>
+            <i data-lucide="chevron-down" style="width:13px;height:13px;color:var(--text-muted);"></i>
+          </button>
+          <div id="icon-picker-dropdown"></div>
         </div>
       </div>
-
-      {modal && (
-        <EditModal
-          tile={modal.isNew ? null : modal.tile}
-          onSave={handleSave}
-          onClose={() => setModal(null)}
-        />
-      )}
-    </>
-  );
-}
+      <!-- Color -->
+      <div>
+        <label class="modal-label">צבע רקע</label>
+        <div id="color-swatches" class="flex flex-wrap gap-2 mb-2"></div>
+        <div class="flex items-center gap-2">
+          <label style="font-size:12px;color:var(--text-muted);">צבע מותאם:</label>
+          <input id="f-color-custom" type="color" style="width:36px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;cursor:pointer;"
+            onchange="selectColor(this.value)" />
+        </div>
+      </div>
+    </div>
+    <!-- Actions -->
+    <div class="flex gap-3 mt-7">
+      <button onclick="closeModal()" class="btn btn-ghost" style="flex:1;">ביטול</button>
+      <button onclick="saveTile()" class="btn btn-gold" style="flex:1;">
+        <i data-lucide="check" style="width:15px;height:15px;"></i>
+        שמור
+      </button>
+    </div>
+  </div>
+</div>
+<!-- ===== SCRIPT ===== -->
+<script>
+  // ── Constants ──────────────────────────────────────────────
+  const STORAGE_KEY = 'eran_dashboard_v2';
+  const ICON_NAMES = [
+    'globe','mail','github','youtube','twitter','linkedin',
+    'rss','music','book-open','code','briefcase','shopping-cart',
+    'camera','coffee','cloud','zap','star','heart','home',
+    'file-text','search','settings','bell','bookmark','map',
+    'monitor','smartphone','terminal','database','send',
+  ];
+  const COLOR_PRESETS = [
+    '#1a1a2e','#16213e','#0f3460','#1b1f23',
+    '#2d6a4f','#1b4332','#3d0000','#003049',
+    '#1a3a4a','#2c3e50','#4a1942','#370617',
+    '#3b1f0a','#0a2a1a','#1a0a3a','#212529',
+  ];
+  const DEFAULT_TILES = [
+    { id:1, name:'Gmail',       url:'https://mail.google.com', icon:'mail',          color:'#1a3a4a' },
+    { id:2, name:'GitHub',      url:'https://github.com',      icon:'github',        color:'#1b1f23' },
+    { id:3, name:'YouTube',     url:'https://youtube.com',     icon:'youtube',       color:'#3d0000' },
+    { id:4, name:'LinkedIn',    url:'https://linkedin.com',    icon:'linkedin',      color:'#003049' },
+    { id:5, name:'Twitter / X', url:'https://x.com',           icon:'twitter',       color:'#0f3460' },
+    { id:6, name:'Google',      url:'https://google.com',      icon:'globe',         color:'#2d6a4f' },
+  ];
+  // ── State ──────────────────────────────────────────────────
+  let tiles = [];
+  let editMode = false;
+  let editingId = null;   // null = new tile
+  let selectedIcon = 'globe';
+  let selectedColor = '#1a1a2e';
+  // ── Load / Save ────────────────────────────────────────────
+  function loadTiles() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      tiles = raw ? JSON.parse(raw) : [...DEFAULT_TILES];
+    } catch { tiles = [...DEFAULT_TILES]; }
+  }
+  function saveTiles() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tiles));
+  }
+  // ── Clock ──────────────────────────────────────────────────
+  const DAY_NAMES  = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  const MONTH_NAMES= ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    document.getElementById('date-display').textContent =
+      `יום ${DAY_NAMES[now.getDay()]}, ${now.getDate()} ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+  }
+  // ── Render tiles ───────────────────────────────────────────
+  function renderTiles() {
+    const grid = document.getElementById('tiles-grid');
+    document.getElementById('tile-count').textContent = tiles.length;
+    grid.innerHTML = '';
+    tiles.forEach((tile, idx) => {
+      const wrap = document.createElement('div');
+      wrap.style.animationDelay = `${idx * 0.05}s`;
+      wrap.classList.add('fade-up');
+      wrap.innerHTML = buildTileHTML(tile);
+      grid.appendChild(wrap);
+    });
+    // Add placeholder when in edit mode
+    if (editMode) {
+      const ph = document.createElement('div');
+      ph.classList.add('tile-add-placeholder');
+      ph.onclick = () => openModal(null);
+      ph.innerHTML = `<i data-lucide="plus" style="width:18px;height:18px;"></i><span>הוסף אריח</span>`;
+      grid.appendChild(ph);
+    }
+    lucide.createIcons();
+  }
+  function buildTileHTML(tile) {
+    const urlClean = tile.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const editClass = editMode ? ' edit-mode-active' : '';
+    return `
+      <a
+        class="tile${editClass}"
+        style="--tile-color:${tile.color};"
+        href="${editMode ? '#' : tile.url}"
+        target="${editMode ? '_self' : '_blank'}"
+        rel="noopener noreferrer"
+        onclick="${editMode ? 'return false;' : ''}"
+      >
+        <!-- Edit overlay -->
+        <div class="tile-edit-overlay">
+          <button class="btn btn-icon btn-edit-tile" onclick="event.preventDefault();openModal(${tile.id})">
+            <i data-lucide="edit-3" style="width:15px;height:15px;"></i>
+          </button>
+          <button class="btn btn-icon btn-del-tile" onclick="event.preventDefault();deleteTile(${tile.id})">
+            <i data-lucide="trash-2" style="width:15px;height:15px;"></i>
+          </button>
+        </div>
+        <div class="tile-icon-wrap">
+          <i data-lucide="${tile.icon}" style="width:20px;height:20px;color:rgba(255,255,255,0.85);"></i>
+        </div>
+        <div class="tile-name">${escapeHTML(tile.name)}</div>
+        <div class="tile-url">${escapeHTML(urlClean)}</div>
+      </a>
+    `;
+  }
+  function escapeHTML(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  // ── Edit mode ──────────────────────────────────────────────
+  function toggleEditMode() {
+    editMode = !editMode;
+    const btn = document.getElementById('btn-settings');
+    const addBtn = document.getElementById('btn-add');
+    const banner = document.getElementById('edit-banner');
+    if (editMode) {
+      btn.classList.add('btn-settings-active');
+      btn.innerHTML = `<i data-lucide="x" style="width:14px;height:14px;"></i> סיום עריכה`;
+      addBtn.style.display = 'inline-flex';
+      banner.classList.add('visible');
+    } else {
+      btn.classList.remove('btn-settings-active');
+      btn.innerHTML = `<i data-lucide="settings" style="width:14px;height:14px;"></i> הגדרות`;
+      addBtn.style.display = 'none';
+      banner.classList.remove('visible');
+    }
+    lucide.createIcons();
+    renderTiles();
+  }
+  // ── Delete tile ────────────────────────────────────────────
+  function deleteTile(id) {
+    tiles = tiles.filter(t => t.id !== id);
+    saveTiles();
+    renderTiles();
+  }
+  // ── Modal ──────────────────────────────────────────────────
+  function openModal(id) {
+    editingId = id;
+    const isNew = id === null;
+    document.getElementById('modal-title').textContent = isNew ? 'אריח חדש' : 'עריכת אריח';
+    document.getElementById('modal-overlay').classList.add('open');
+    if (!isNew) {
+      const tile = tiles.find(t => t.id === id);
+      document.getElementById('f-name').value = tile.name;
+      document.getElementById('f-url').value = tile.url;
+      selectIcon(tile.icon, false);
+      selectColor(tile.color);
+    } else {
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-url').value = '';
+      selectIcon('globe', false);
+      selectColor('#1a3a4a');
+    }
+    buildIconPicker();
+    buildColorSwatches();
+    updatePreview();
+  }
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.getElementById('icon-picker-dropdown').classList.remove('open');
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+  function saveTile() {
+    const name = document.getElementById('f-name').value.trim();
+    const url  = document.getElementById('f-url').value.trim();
+    if (!name) { alert('אנא הכנס שם לאריח'); return; }
+    if (!url)  { alert('אנא הכנס כתובת URL'); return; }
+    if (editingId === null) {
+      tiles.push({ id: Date.now(), name, url, icon: selectedIcon, color: selectedColor });
+    } else {
+      tiles = tiles.map(t =>
+        t.id === editingId ? { ...t, name, url, icon: selectedIcon, color: selectedColor } : t
+      );
+    }
+    saveTiles();
+    closeModal();
+    renderTiles();
+  }
+  // ── Icon picker ────────────────────────────────────────────
+  function buildIconPicker() {
+    const dp = document.getElementById('icon-picker-dropdown');
+    dp.innerHTML = ICON_NAMES.map(name => `
+      <button class="icon-opt ${name === selectedIcon ? 'selected' : ''}"
+        onclick="selectIcon('${name}', true)" title="${name}">
+        <i data-lucide="${name}" style="width:16px;height:16px;"></i>
+      </button>
+    `).join('');
+    lucide.createIcons();
+  }
+  function toggleIconPicker() {
+    const dp = document.getElementById('icon-picker-dropdown');
+    dp.classList.toggle('open');
+    if (dp.classList.contains('open')) buildIconPicker();
+  }
+  function selectIcon(name, closeDropdown) {
+    selectedIcon = name;
+    // Update trigger button
+    document.getElementById('icon-trigger-label').textContent = name;
+    const trigIcon = document.getElementById('icon-trigger-icon');
+    trigIcon.setAttribute('data-lucide', name);
+    lucide.createIcons({ nodes: [trigIcon] });
+    if (closeDropdown) {
+      document.getElementById('icon-picker-dropdown').classList.remove('open');
+    }
+    // Highlight selected in picker
+    document.querySelectorAll('.icon-opt').forEach(el => {
+      el.classList.toggle('selected', el.title === name);
+    });
+    updatePreview();
+  }
+  // ── Color picker ───────────────────────────────────────────
+  function buildColorSwatches() {
+    const wrap = document.getElementById('color-swatches');
+    wrap.innerHTML = COLOR_PRESETS.map(c => `
+      <button class="color-swatch ${c === selectedColor ? 'selected' : ''}"
+        style="background:${c};" onclick="selectColor('${c}')"></button>
+    `).join('');
+  }
+  function selectColor(color) {
+    selectedColor = color;
+    document.getElementById('f-color-custom').value = color;
+    document.querySelectorAll('.color-swatch').forEach(el => {
+      el.classList.toggle('selected', el.style.background === color ||
+        el.style.background === hexToRgb(color));
+    });
+    updatePreview();
+  }
+  // naive hex→rgb string comparison helper
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  // ── Live preview ───────────────────────────────────────────
+  function updatePreview() {
+    const name = document.getElementById('f-name').value || 'שם';
+    document.getElementById('preview-label').textContent = name;
+    document.getElementById('tile-preview').style.background = selectedColor;
+    const previewIcon = document.getElementById('preview-icon');
+    previewIcon.setAttribute('data-lucide', selectedIcon);
+    lucide.createIcons({ nodes: [previewIcon] });
+  }
+  // ── Init ───────────────────────────────────────────────────
+  loadTiles();
+  renderTiles();
+  updateClock();
+  setInterval(updateClock, 1000);
+  lucide.createIcons();
+</script>
+</body>
+</html>
