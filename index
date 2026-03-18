@@ -1,0 +1,490 @@
+import { useState, useEffect, useRef } from "react";
+import {
+  Globe, Mail, Github, Youtube, Twitter, Linkedin, Rss,
+  Music, BookOpen, Code, Briefcase, ShoppingCart, Camera,
+  Coffee, Cloud, Zap, Star, Heart, Home, Settings, X,
+  Check, Plus, Trash2, Edit3, ExternalLink, ChevronDown
+} from "lucide-react";
+
+const ICON_OPTIONS = [
+  { name: "Globe", icon: Globe }, { name: "Mail", icon: Mail },
+  { name: "Github", icon: Github }, { name: "Youtube", icon: Youtube },
+  { name: "Twitter", icon: Twitter }, { name: "Linkedin", icon: Linkedin },
+  { name: "Rss", icon: Rss }, { name: "Music", icon: Music },
+  { name: "BookOpen", icon: BookOpen }, { name: "Code", icon: Code },
+  { name: "Briefcase", icon: Briefcase }, { name: "ShoppingCart", icon: ShoppingCart },
+  { name: "Camera", icon: Camera }, { name: "Coffee", icon: Coffee },
+  { name: "Cloud", icon: Cloud }, { name: "Zap", icon: Zap },
+  { name: "Star", icon: Star }, { name: "Heart", icon: Heart },
+  { name: "Home", icon: Home },
+];
+
+const COLOR_PRESETS = [
+  "#1a1a2e", "#16213e", "#0f3460", "#533483",
+  "#2d6a4f", "#1b4332", "#6b3a2a", "#7b2d00",
+  "#1a3a4a", "#2c3e50", "#4a1942", "#1a472a",
+  "#3d0000", "#003049", "#370617", "#212529",
+];
+
+const DEFAULT_TILES = [
+  { id: 1, name: "Gmail", url: "https://mail.google.com", icon: "Mail", color: "#1a3a4a" },
+  { id: 2, name: "GitHub", url: "https://github.com", icon: "Github", color: "#1b1f23" },
+  { id: 3, name: "YouTube", url: "https://youtube.com", icon: "Youtube", color: "#3d0000" },
+  { id: 4, name: "LinkedIn", url: "https://linkedin.com", icon: "Linkedin", color: "#003049" },
+  { id: 5, name: "Twitter / X", url: "https://x.com", icon: "Twitter", color: "#0f3460" },
+  { id: 6, name: "Google", url: "https://google.com", icon: "Globe", color: "#2d6a4f" },
+];
+
+const STORAGE_KEY = "eran_dashboard_tiles";
+
+function getIconComponent(name) {
+  const found = ICON_OPTIONS.find((i) => i.name === name);
+  return found ? found.icon : Globe;
+}
+
+function useClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
+
+function EditModal({ tile, onSave, onClose }) {
+  const [form, setForm] = useState({
+    name: tile?.name || "",
+    url: tile?.url || "",
+    icon: tile?.icon || "Globe",
+    color: tile?.color || "#1a1a2e",
+  });
+  const [iconOpen, setIconOpen] = useState(false);
+  const [customColor, setCustomColor] = useState(form.color);
+
+  const IconComp = getIconComponent(form.icon);
+
+  return (
+    <div
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl border border-white/10"
+        style={{ background: "#0d0d14" }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-white text-lg font-semibold tracking-wide">
+            {tile ? "ערוך אריח" : "אריח חדש"}
+          </h2>
+          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Preview */}
+        <div className="flex justify-center mb-6">
+          <div
+            className="w-20 h-20 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-lg transition-all duration-300"
+            style={{ background: form.color, border: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            <IconComp size={28} color="rgba(255,255,255,0.9)" />
+            <span className="text-white/80 text-xs truncate max-w-[72px] text-center">
+              {form.name || "שם"}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* Name */}
+          <div>
+            <label className="text-white/50 text-xs uppercase tracking-widest mb-1 block">שם</label>
+            <input
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-yellow-400/50 transition-colors"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="שם האתר"
+              dir="rtl"
+            />
+          </div>
+
+          {/* URL */}
+          <div>
+            <label className="text-white/50 text-xs uppercase tracking-widest mb-1 block">קישור</label>
+            <input
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-yellow-400/50 transition-colors"
+              value={form.url}
+              onChange={(e) => setForm({ ...form, url: e.target.value })}
+              placeholder="https://..."
+              dir="ltr"
+            />
+          </div>
+
+          {/* Icon Picker */}
+          <div>
+            <label className="text-white/50 text-xs uppercase tracking-widest mb-1 block">אייקון</label>
+            <div className="relative">
+              <button
+                onClick={() => setIconOpen(!iconOpen)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm flex items-center justify-between hover:border-white/30 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <IconComp size={16} />
+                  {form.icon}
+                </span>
+                <ChevronDown size={14} className={`transition-transform ${iconOpen ? "rotate-180" : ""}`} />
+              </button>
+              {iconOpen && (
+                <div className="absolute top-full mt-1 w-full bg-[#0d0d14] border border-white/10 rounded-xl p-2 grid grid-cols-5 gap-1 z-10 shadow-2xl max-h-40 overflow-y-auto">
+                  {ICON_OPTIONS.map(({ name, icon: Ic }) => (
+                    <button
+                      key={name}
+                      onClick={() => { setForm({ ...form, icon: name }); setIconOpen(false); }}
+                      className={`p-2 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors ${form.icon === name ? "bg-yellow-400/20 text-yellow-400" : "text-white/60"}`}
+                      title={name}
+                    >
+                      <Ic size={16} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Color */}
+          <div>
+            <label className="text-white/50 text-xs uppercase tracking-widest mb-1 block">צבע רקע</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {COLOR_PRESETS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => { setForm({ ...form, color: c }); setCustomColor(c); }}
+                  className="w-7 h-7 rounded-lg border-2 transition-all"
+                  style={{
+                    background: c,
+                    borderColor: form.color === c ? "#facc15" : "rgba(255,255,255,0.1)",
+                  }}
+                />
+              ))}
+              <label className="w-7 h-7 rounded-lg border-2 border-white/20 overflow-hidden cursor-pointer hover:border-white/40 transition-colors" title="צבע מותאם">
+                <input
+                  type="color"
+                  className="opacity-0 w-full h-full cursor-pointer"
+                  value={customColor}
+                  onChange={(e) => { setCustomColor(e.target.value); setForm({ ...form, color: e.target.value }); }}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white hover:border-white/30 text-sm transition-colors"
+          >
+            ביטול
+          </button>
+          <button
+            onClick={() => onSave(form)}
+            className="flex-1 py-2.5 rounded-xl bg-yellow-400 text-black font-semibold text-sm hover:bg-yellow-300 transition-colors flex items-center justify-center gap-2"
+          >
+            <Check size={16} />
+            שמור
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Tile({ tile, editMode, onEdit, onDelete }) {
+  const IconComp = getIconComponent(tile.icon);
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="relative group"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <a
+        href={editMode ? undefined : tile.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={editMode ? (e) => e.preventDefault() : undefined}
+        className="block rounded-2xl p-5 transition-all duration-300 cursor-pointer select-none"
+        style={{
+          background: tile.color,
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: hovered && !editMode
+            ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(250,204,21,0.2)`
+            : "0 4px 16px rgba(0,0,0,0.3)",
+          transform: hovered && !editMode ? "translateY(-4px) scale(1.02)" : "translateY(0) scale(1)",
+        }}
+      >
+        <div className="flex flex-col h-full min-h-[80px] justify-between">
+          <div className="flex items-start justify-between">
+            <div
+              className="p-2 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            >
+              <IconComp size={22} color="rgba(255,255,255,0.85)" />
+            </div>
+            {!editMode && (
+              <ExternalLink
+                size={12}
+                color="rgba(255,255,255,0.2)"
+                className="group-hover:opacity-100 opacity-0 transition-opacity mt-1"
+              />
+            )}
+          </div>
+          <div>
+            <p className="text-white font-medium text-sm mt-3 leading-tight">{tile.name}</p>
+            <p className="text-white/35 text-xs mt-0.5 truncate">{tile.url.replace(/^https?:\/\//, "")}</p>
+          </div>
+        </div>
+      </a>
+
+      {/* Edit mode overlay */}
+      {editMode && (
+        <div
+          className="absolute inset-0 rounded-2xl flex items-center justify-center gap-2 transition-all duration-200"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)" }}
+        >
+          <button
+            onClick={() => onEdit(tile)}
+            className="p-2.5 rounded-xl bg-yellow-400/90 hover:bg-yellow-400 text-black transition-colors"
+          >
+            <Edit3 size={16} />
+          </button>
+          <button
+            onClick={() => onDelete(tile.id)}
+            className="p-2.5 rounded-xl bg-red-500/80 hover:bg-red-500 text-white transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const now = useClock();
+  const [tiles, setTiles] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : DEFAULT_TILES;
+    } catch { return DEFAULT_TILES; }
+  });
+  const [editMode, setEditMode] = useState(false);
+  const [modal, setModal] = useState(null); // null | { tile } | { isNew: true }
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tiles)); } catch {}
+  }, [tiles]);
+
+  const dayNames = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+  const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+
+  const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const dateStr = `יום ${dayNames[now.getDay()]}, ${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+  function handleSave(form) {
+    if (modal?.isNew) {
+      setTiles((prev) => [...prev, { ...form, id: Date.now() }]);
+    } else {
+      setTiles((prev) => prev.map((t) => t.id === modal.tile.id ? { ...t, ...form } : t));
+    }
+    setModal(null);
+  }
+
+  function handleDelete(id) {
+    setTiles((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #080810; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .tile-in { animation: fadeIn 0.4s ease both; }
+        @keyframes pulse-dot { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+        .pulse { animation: pulse-dot 2s ease-in-out infinite; }
+      `}</style>
+
+      <div
+        dir="rtl"
+        style={{
+          minHeight: "100vh",
+          background: "radial-gradient(ellipse at 20% 0%, #1a1040 0%, #080810 50%, #0a0a18 100%)",
+          fontFamily: "'DM Sans', sans-serif",
+          color: "white",
+          padding: "0",
+        }}
+      >
+        {/* Subtle grid overlay */}
+        <div
+          style={{
+            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
+
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto", padding: "32px 24px" }}>
+
+          {/* Header */}
+          <header style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 56 }}>
+            {/* Right: Greeting */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <div className="pulse" style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80" }} />
+                <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  ברוך הבא
+                </span>
+              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 600, color: "white", letterSpacing: "-0.02em" }}>
+                שלום, <span style={{ color: "#facc15" }}>ערן</span> ✦
+              </h1>
+            </div>
+
+            {/* Left: Clock */}
+            <div style={{ textAlign: "left" }}>
+              <div
+                style={{
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: 28,
+                  fontWeight: 500,
+                  color: "white",
+                  letterSpacing: "0.05em",
+                  lineHeight: 1,
+                  textAlign: "left",
+                }}
+              >
+                {timeStr}
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, letterSpacing: "0.08em", marginTop: 4, textAlign: "left" }}>
+                {dateStr}
+              </div>
+            </div>
+          </header>
+
+          {/* Section title + controls */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 3, height: 18, borderRadius: 2, background: "#facc15" }} />
+              <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                קישורים מהירים
+              </span>
+              <span style={{
+                background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)",
+                fontSize: 10, padding: "2px 8px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.08)"
+              }}>
+                {tiles.length}
+              </span>
+            </div>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              {editMode && (
+                <button
+                  onClick={() => setModal({ isNew: true })}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "8px 16px", borderRadius: 12,
+                    background: "rgba(250,204,21,0.12)", border: "1px solid rgba(250,204,21,0.3)",
+                    color: "#facc15", fontSize: 12, cursor: "pointer", fontWeight: 500,
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <Plus size={14} /> הוסף אריח
+                </button>
+              )}
+              <button
+                onClick={() => setEditMode(!editMode)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "8px 16px", borderRadius: 12,
+                  background: editMode ? "rgba(250,204,21,0.15)" : "rgba(255,255,255,0.05)",
+                  border: editMode ? "1px solid rgba(250,204,21,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                  color: editMode ? "#facc15" : "rgba(255,255,255,0.5)",
+                  fontSize: 12, cursor: "pointer", fontWeight: 500,
+                  transition: "all 0.2s",
+                }}
+              >
+                <Settings size={14} />
+                {editMode ? "סיום עריכה" : "הגדרות"}
+              </button>
+            </div>
+          </div>
+
+          {/* Edit mode banner */}
+          {editMode && (
+            <div style={{
+              marginBottom: 16, padding: "10px 16px", borderRadius: 12,
+              background: "rgba(250,204,21,0.06)", border: "1px solid rgba(250,204,21,0.15)",
+              color: "rgba(250,204,21,0.7)", fontSize: 12, textAlign: "center",
+            }}>
+              מצב עריכה פעיל — לחץ על אריח כדי לערוך אותו
+            </div>
+          )}
+
+          {/* Tiles Grid */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+            gap: 14,
+          }}>
+            {tiles.map((tile, i) => (
+              <div
+                key={tile.id}
+                className="tile-in"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
+                <Tile
+                  tile={tile}
+                  editMode={editMode}
+                  onEdit={(t) => setModal({ tile: t })}
+                  onDelete={handleDelete}
+                />
+              </div>
+            ))}
+          </div>
+
+          {tiles.length === 0 && (
+            <div style={{
+              textAlign: "center", padding: "60px 20px",
+              color: "rgba(255,255,255,0.2)", fontSize: 14,
+            }}>
+              אין אריחים עדיין — לחץ על "הוסף אריח" כדי להתחיל
+            </div>
+          )}
+
+          {/* Footer */}
+          <div style={{
+            marginTop: 64, textAlign: "center",
+            color: "rgba(255,255,255,0.12)", fontSize: 11, letterSpacing: "0.1em",
+          }}>
+            ✦ הדשבורד האישי של ערן ✦
+          </div>
+        </div>
+      </div>
+
+      {modal && (
+        <EditModal
+          tile={modal.isNew ? null : modal.tile}
+          onSave={handleSave}
+          onClose={() => setModal(null)}
+        />
+      )}
+    </>
+  );
+}
