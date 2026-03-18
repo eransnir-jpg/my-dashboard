@@ -4,706 +4,1198 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>הדשבורד של ערן</title>
-  <!-- Tailwind CSS CDN -->
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
   <style>
+    /* ══════════════════════════════════════════════════════
+       THEME CSS VARIABLES
+       כל הצבעים בעמוד נגזרים ממשתנים אלו בלבד
+    ══════════════════════════════════════════════════════ */
     :root {
-      --gold: #facc15;
-      --gold-dim: rgba(250, 204, 21, 0.15);
-      --gold-border: rgba(250, 204, 21, 0.3);
-      --surface: rgba(255, 255, 255, 0.04);
-      --border: rgba(255, 255, 255, 0.08);
-      --text-muted: rgba(255, 255, 255, 0.35);
-      --text-dim: rgba(255, 255, 255, 0.55);
+      /* accent / gold */
+      --accent:         #facc15;
+      --accent-dim:     rgba(250,204,21,0.13);
+      --accent-border:  rgba(250,204,21,0.28);
+
+      /* backgrounds */
+      --bg-base:        #080810;
+      --bg-grad-a:      #1a1040;   /* radial top-left */
+      --bg-grad-b:      #0f2040;   /* radial bottom-right */
+
+      /* surfaces */
+      --surface:        rgba(255,255,255,0.04);
+      --surface-card:   rgba(255,255,255,0.03);
+      --border:         rgba(255,255,255,0.08);
+
+      /* text */
+      --text-base:      #ffffff;
+      --text-dim:       rgba(255,255,255,0.55);
+      --text-muted:     rgba(255,255,255,0.35);
+
+      /* tile defaults when user has not set a custom color */
+      --tile-default:   #1a1a2e;
+
+      /* ticker bar */
+      --ticker-bg:      rgba(8,8,16,0.92);
+
+      /* grid overlay opacity */
+      --grid-opacity:   0.017;
     }
-    * { box-sizing: border-box; }
+
+    /* ── Global transition for smooth theme switching ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      transition:
+        background-color 0.4s ease,
+        border-color     0.35s ease,
+        color            0.3s ease,
+        box-shadow       0.3s ease;
+    }
+    /* keep hover/transform transitions snappy */
+    .tile, .tile-menu-btn, .btn, .news-item, .theme-card { transition: none !important; }
+    .tile { transition: transform 0.25s ease, box-shadow 0.25s ease !important; }
+    .btn  { transition: background 0.2s, border-color 0.2s, color 0.2s !important; }
+
     html, body {
-      margin: 0; padding: 0;
-      min-height: 100vh;
+      margin: 0; padding: 0; min-height: 100vh;
       font-family: 'DM Sans', sans-serif;
-      background: #080810;
-      color: white;
-      overflow-x: hidden;
+      color: var(--text-base); overflow-x: hidden;
     }
     body {
       background:
-        radial-gradient(ellipse 80% 50% at 15% -5%, #1a1040 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 85% 100%, #0f2040 0%, transparent 60%),
-        #080810;
+        radial-gradient(ellipse 80% 50% at 15% -5%, var(--bg-grad-a) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, var(--bg-grad-b) 0%, transparent 60%),
+        var(--bg-base);
     }
-    /* Grid texture */
     body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
+      content: ''; position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
       background-image:
-        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+        linear-gradient(rgba(255,255,255,var(--grid-opacity)) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,var(--grid-opacity)) 1px, transparent 1px);
       background-size: 44px 44px;
     }
-    #app { position: relative; z-index: 1; }
-    /* Clock font */
+    #app { position: relative; z-index: 1; padding-bottom: 44px; }
+
+    /* ══════════════════════════════════════════════════════
+       CLOCK
+    ══════════════════════════════════════════════════════ */
     #clock {
       font-family: 'DM Mono', monospace;
-      font-size: clamp(22px, 4vw, 32px);
-      font-weight: 500;
-      letter-spacing: 0.05em;
-      line-height: 1;
-      color: white;
+      font-size: clamp(20px, 3.5vw, 30px);
+      font-weight: 500; letter-spacing: 0.05em; line-height: 1;
+      color: var(--text-base);
     }
-    /* Tile styles */
-    .tile {
+
+    /* ══════════════════════════════════════════════════════
+       SEARCH
+    ══════════════════════════════════════════════════════ */
+    #search-wrap { max-width: 580px; width: 100%; margin: 0 auto 32px; }
+    #search-form {
+      display: flex; align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px; padding: 0 6px 0 18px;
+    }
+    #search-form:focus-within {
+      border-color: var(--accent-border);
+      background: rgba(255,255,255,0.07);
+      box-shadow: 0 0 0 4px var(--accent-dim);
+    }
+    #search-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: var(--text-base); font-family: 'DM Sans', sans-serif;
+      font-size: 15px; padding: 13px 10px 13px 0; direction: rtl;
+    }
+    #search-input::placeholder { color: var(--text-muted); }
+    #search-btn {
+      background: var(--accent); border: none; cursor: pointer;
+      color: #000; padding: 8px 16px; border-radius: 40px;
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+      flex-shrink: 0; transition: filter 0.2s !important;
+    }
+    #search-btn:hover { filter: brightness(1.12); }
+
+    /* ══════════════════════════════════════════════════════
+       WIDGET CARDS
+    ══════════════════════════════════════════════════════ */
+    .widget-card {
       border-radius: 18px;
       border: 1px solid var(--border);
-      background: var(--tile-color, #1a1a2e);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-      cursor: pointer;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      padding: 18px;
-      min-height: 120px;
-      position: relative;
-      overflow: hidden;
+      background: var(--surface-card);
+      padding: 16px 18px; position: relative; overflow: hidden;
+    }
+    .widget-card::after {
+      content: ''; position: absolute; inset: 0; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    .widget-label {
+      font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #widgets-row {
+      display: grid; grid-template-columns: 200px 1fr; gap: 14px; margin-bottom: 28px;
+    }
+    @media (max-width: 600px) { #widgets-row { grid-template-columns: 1fr; } }
+
+    /* Weather */
+    #weather-temp {
+      font-family: 'DM Mono', monospace;
+      font-size: 42px; font-weight: 500; line-height: 1; color: var(--text-base);
+    }
+    #weather-unit  { font-size: 22px; color: var(--text-muted); vertical-align: top; margin-top: 6px; display: inline-block; }
+    #weather-desc  { font-size: 13px; color: var(--text-dim); margin-top: 3px; }
+    #weather-city  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    #weather-icon-wrap { font-size: 34px; line-height: 1; }
+    #weather-loading { font-size: 12px; color: var(--text-muted); }
+    #weather-error { font-size: 11px; color: rgba(255,100,100,0.7); display:none; margin-top:4px; line-height:1.4; }
+    #weather-hint  { font-size: 11px; color: rgba(250,204,21,0.55); display:none; margin-top:6px; line-height:1.5; }
+    .weather-row   { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .weather-extra { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+    .weather-pill  {
+      background: rgba(255,255,255,0.05); border-radius: 8px;
+      padding: 5px 8px; font-size: 11px; color: var(--text-dim);
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    /* News */
+    #news-list { display: flex; flex-direction: column; }
+    .news-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 6px; border-radius: 8px;
+      border-bottom: 1px solid var(--border);
+      text-decoration: none; cursor: pointer;
+    }
+    .news-item:last-child { border-bottom: none; }
+    .news-item:hover { background: var(--surface); }
+    .news-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: 0.6; flex-shrink: 0; }
+    .news-headline {
+      font-size: 12.5px; color: var(--text-dim);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+    }
+    .news-item:hover .news-headline { color: var(--text-base); }
+    .news-time { font-size: 10px; color: var(--text-muted); flex-shrink: 0; font-family: 'DM Mono', monospace; }
+    #news-loading { font-size: 12px; color: var(--text-muted); padding: 6px 0; }
+    #news-error   { font-size: 12px; color: rgba(255,100,100,0.6); display:none; padding: 6px 0; }
+    #news-refresh { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0; display: flex; align-items: center; }
+    #news-refresh:hover { color: var(--accent); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinning { animation: spin 0.8s linear infinite; }
+
+    /* ══════════════════════════════════════════════════════
+       TILES
+    ══════════════════════════════════════════════════════ */
+    #tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+    }
+    .tile-wrap { position: relative; }
+    .tile {
+      border-radius: 18px; border: 1px solid var(--border);
+      background: var(--tile-color, var(--tile-default));
+      cursor: pointer; text-decoration: none;
+      display: flex; flex-direction: column;
+      padding: 18px; min-height: 118px;
+      position: relative; overflow: hidden;
     }
     .tile::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 18px;
+      content: ''; position: absolute; inset: 0; border-radius: 18px;
       background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
       pointer-events: none;
     }
     .tile:hover {
       transform: translateY(-5px) scale(1.02);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(250,204,21,0.18);
-    }
-    .tile.edit-mode {
-      cursor: default;
-    }
-    .tile.edit-mode:hover {
-      transform: none;
-      box-shadow: none;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px var(--accent-border);
     }
     .tile-icon-wrap {
-      width: 40px; height: 40px;
-      border-radius: 12px;
+      width: 38px; height: 38px; border-radius: 11px;
       background: rgba(255,255,255,0.1);
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
     }
-    .tile-name {
-      font-size: 14px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.9);
-      margin-top: auto;
-      padding-top: 10px;
+    .tile-name { font-size: 13px; font-weight: 500; color: var(--text-base); margin-top: auto; padding-top: 10px; opacity: 0.9; }
+    .tile-url  { font-size: 10px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .tile-menu-btn {
+      position: absolute; top: 9px; left: 9px; z-index: 5;
+      width: 27px; height: 27px; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(6px);
+      color: var(--text-dim); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+      opacity: 0;
     }
-    .tile-url {
-      font-size: 11px;
-      color: rgba(255,255,255,0.3);
-      margin-top: 2px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .tile-wrap:hover .tile-menu-btn, .tile-menu-btn.menu-open { opacity: 1; }
+    .tile-menu-btn:hover, .tile-menu-btn.menu-open { background: rgba(0,0,0,0.75); color: var(--text-base); }
+
+    .tile-dropdown {
+      position: absolute; top: 40px; left: 9px; z-index: 20;
+      min-width: 145px; background: var(--bg-base);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 5px; box-shadow: 0 16px 48px rgba(0,0,0,0.65);
+      display: none; flex-direction: column; gap: 2px;
     }
-    /* Edit overlay on tile */
-    .tile-edit-overlay {
-      position: absolute;
-      inset: 0;
-      border-radius: 18px;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      z-index: 2;
+    .tile-dropdown.open { display: flex; animation: dropIn 0.17s ease both; }
+    @keyframes dropIn {
+      from { opacity:0; transform: translateY(-5px) scale(0.97); }
+      to   { opacity:1; transform: translateY(0) scale(1); }
     }
-    .edit-mode-active .tile-edit-overlay {
-      display: flex;
+    .dd-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 12px; border-radius: 9px; border: none;
+      background: transparent; color: var(--text-dim);
+      font-family: 'DM Sans', sans-serif; font-size: 13px;
+      cursor: pointer; width: 100%; text-align: right;
     }
-    /* Tile grid */
-    #tiles-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-      gap: 14px;
+    .dd-item:hover { background: var(--surface); color: var(--text-base); }
+    .dd-item.danger:hover { background: rgba(239,68,68,0.13); color: #f87171; }
+    .dd-sep { height: 1px; background: var(--border); margin: 3px 8px; }
+
+    .tile-add-placeholder {
+      border-radius: 18px; border: 1.5px dashed var(--border);
+      min-height: 118px; display: flex; align-items: center;
+      justify-content: center; flex-direction: column; gap: 5px;
+      cursor: pointer; color: var(--text-muted); font-size: 12px;
     }
-    /* Animations */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
+    .tile-add-placeholder:hover {
+      border-color: var(--accent-border);
+      background: var(--accent-dim);
+      color: var(--accent);
     }
-    .fade-up { animation: fadeUp 0.5s ease both; }
-    @keyframes pulseDot {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.25; }
+
+    /* ══════════════════════════════════════════════════════
+       SECTION BAR
+    ══════════════════════════════════════════════════════ */
+    .section-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-bar-left { display: flex; align-items: center; gap: 8px; }
+    .section-accent { width: 3px; height: 17px; border-radius: 2px; background: var(--accent); }
+    .section-title  { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
+    .section-badge  {
+      background: var(--surface); color: var(--text-muted);
+      font-size: 10px; padding: 2px 9px; border-radius: 99px; border: 1px solid var(--border);
     }
+
+    /* ══════════════════════════════════════════════════════
+       ANIMATIONS
+    ══════════════════════════════════════════════════════ */
+    @keyframes fadeUp { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp 0.45s ease both; }
+    @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:.2} }
     .pulse-dot { animation: pulseDot 2.2s ease-in-out infinite; }
-    /* Modal */
-    #modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.72);
-      backdrop-filter: blur(6px);
-      z-index: 100;
-      display: none;
-      align-items: center;
-      justify-content: center;
+
+    /* ══════════════════════════════════════════════════════
+       TICKER
+    ══════════════════════════════════════════════════════ */
+    #ticker-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: var(--ticker-bg); backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; height: 36px; overflow: hidden;
+    }
+    #ticker-label {
+      padding: 0 14px 0 10px; font-size: 10px; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--accent); white-space: nowrap;
+      border-right: 1px solid var(--border); flex-shrink: 0;
+    }
+    #ticker-track { flex: 1; overflow: hidden; }
+    #ticker-inner {
+      display: flex; white-space: nowrap;
+      animation: tickerScroll 40s linear infinite;
+    }
+    #ticker-inner:hover { animation-play-state: paused; }
+    .ticker-item {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 0 28px; font-size: 12.5px; color: var(--text-dim);
+      cursor: pointer; text-decoration: none; border-right: 1px solid var(--border);
+    }
+    .ticker-item:hover { color: var(--text-base); }
+    @keyframes tickerScroll { 0%{ transform: translateX(0); } 100%{ transform: translateX(-50%); } }
+
+    /* ══════════════════════════════════════════════════════
+       THEME FAB (Floating Action Button — bottom-right)
+    ══════════════════════════════════════════════════════ */
+    #theme-fab {
+      position: fixed; bottom: 52px; right: 20px; z-index: 200;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--accent); color: #000;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 3px var(--accent-dim);
+      transition: transform 0.2s, filter 0.2s !important;
+    }
+    #theme-fab:hover { transform: scale(1.1) rotate(12deg); filter: brightness(1.1); }
+    #theme-fab.open  { transform: scale(1.05) rotate(30deg); }
+
+    /* ── Theme panel ── */
+    #theme-panel {
+      position: fixed; bottom: 106px; right: 20px; z-index: 199;
+      width: 300px;
+      background: rgba(10,10,18,0.96); backdrop-filter: blur(16px);
+      border: 1px solid var(--border); border-radius: 22px;
       padding: 20px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+      display: none;
+      flex-direction: column; gap: 14px;
+    }
+    #theme-panel.open {
+      display: flex;
+      animation: panelIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes panelIn {
+      from { opacity:0; transform: translateY(12px) scale(0.95); }
+      to   { opacity:1; transform: translateY(0) scale(1); }
+    }
+    #theme-panel-title {
+      font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--text-muted); display: flex; align-items: center; gap: 7px;
+    }
+
+    /* Theme cards grid */
+    #theme-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .theme-card {
+      border-radius: 14px; padding: 11px 12px;
+      border: 2px solid transparent;
+      cursor: pointer; display: flex; flex-direction: column; gap: 5px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s, transform 0.18s !important;
+    }
+    .theme-card:hover { transform: translateY(-2px); }
+    .theme-card.active { border-color: var(--accent) !important; }
+    .theme-card.active::after {
+      content: '✓';
+      position: absolute; top: 7px; left: 9px;
+      font-size: 11px; font-weight: 700; color: var(--accent);
+    }
+    .theme-swatches {
+      display: flex; gap: 4px;
+    }
+    .theme-swatch {
+      width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;
+    }
+    .theme-name {
+      font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85);
+    }
+    .theme-subtitle {
+      font-size: 10px; color: rgba(255,255,255,0.38); margin-top: 1px;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       MODAL
+    ══════════════════════════════════════════════════════ */
+    #modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px); z-index: 100;
+      display: none; align-items: center; justify-content: center; padding: 20px;
     }
     #modal-overlay.open { display: flex; }
     #modal-box {
-      background: #0d0d16;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px;
-      width: 100%;
-      max-width: 420px;
-      padding: 28px;
-      position: relative;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: 24px; width: 100%; max-width: 420px;
+      padding: 28px; box-shadow: 0 32px 80px rgba(0,0,0,0.6);
     }
     .modal-label {
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      display: block;
+      font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 6px; display: block;
     }
     .modal-input {
-      width: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 10px 14px;
-      color: white;
-      font-size: 14px;
-      font-family: 'DM Sans', sans-serif;
-      outline: none;
-      transition: border-color 0.2s;
+      width: 100%; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 10px 14px; color: var(--text-base); font-size: 14px;
+      font-family: 'DM Sans', sans-serif; outline: none;
     }
-    .modal-input:focus {
-      border-color: rgba(250,204,21,0.4);
-    }
-    /* Icon picker */
+    .modal-input:focus { border-color: var(--accent-border); }
     #icon-picker-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 4px);
-      right: 0; left: 0;
-      background: #0d0d16;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px;
-      padding: 10px;
-      display: none;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-      z-index: 10;
+      position: absolute; top: calc(100% + 4px); right: 0; left: 0;
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: 14px; padding: 10px;
+      display: none; grid-template-columns: repeat(6,1fr);
+      gap: 6px; z-index: 10;
       box-shadow: 0 16px 40px rgba(0,0,0,0.5);
-      max-height: 200px;
-      overflow-y: auto;
+      max-height: 200px; overflow-y: auto;
     }
     #icon-picker-dropdown.open { display: grid; }
     .icon-opt {
-      padding: 8px;
-      border-radius: 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: rgba(255,255,255,0.5);
-      transition: background 0.15s, color 0.15s;
-      background: transparent;
-      border: none;
+      padding: 8px; border-radius: 10px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted);
+      background: transparent; border: none;
     }
-    .icon-opt:hover { background: rgba(255,255,255,0.08); color: white; }
-    .icon-opt.selected { background: rgba(250,204,21,0.15); color: var(--gold); }
-    /* Color swatches */
+    .icon-opt:hover { background: var(--surface); color: var(--text-base); }
+    .icon-opt.selected { background: var(--accent-dim); color: var(--accent); }
     .color-swatch {
-      width: 28px; height: 28px;
-      border-radius: 8px;
-      border: 2px solid rgba(255,255,255,0.1);
+      width: 28px; height: 28px; border-radius: 8px;
+      border: 2px solid var(--border);
       cursor: pointer;
-      transition: border-color 0.15s, transform 0.15s;
     }
     .color-swatch:hover { transform: scale(1.15); }
-    .color-swatch.selected { border-color: var(--gold); }
-    /* Buttons */
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 6px; padding: 9px 18px;
-      border-radius: 12px; font-size: 13px; font-weight: 500;
-      cursor: pointer; transition: all 0.2s;
-      font-family: 'DM Sans', sans-serif;
-      border: none; outline: none;
-    }
-    .btn-gold {
-      background: var(--gold);
-      color: #000;
-    }
-    .btn-gold:hover { background: #fde047; }
-    .btn-ghost {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.55);
-    }
-    .btn-ghost:hover { color: white; border-color: rgba(255,255,255,0.25); }
-    .btn-icon {
-      width: 36px; height: 36px; padding: 0;
-      border-radius: 10px;
-    }
-    .btn-edit-tile {
-      background: rgba(250,204,21,0.9);
-      color: #000;
-    }
-    .btn-edit-tile:hover { background: var(--gold); }
-    .btn-del-tile {
-      background: rgba(239,68,68,0.8);
-      color: white;
-    }
-    .btn-del-tile:hover { background: #ef4444; }
-    /* Settings active */
-    .btn-settings-active {
-      background: rgba(250,204,21,0.12) !important;
-      border-color: rgba(250,204,21,0.35) !important;
-      color: var(--gold) !important;
-    }
-    /* Tile preview in modal */
+    .color-swatch.selected { border-color: var(--accent) !important; }
     #tile-preview {
-      width: 80px; height: 80px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.1);
+      width: 78px; height: 78px; border-radius: 18px;
+      border: 1px solid var(--border);
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 6px;
-      transition: background 0.3s;
+      align-items: center; justify-content: center; gap: 5px;
     }
     #preview-label {
-      font-size: 11px;
-      color: rgba(255,255,255,0.75);
-      font-weight: 500;
-      max-width: 68px;
-      text-align: center;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+      font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 500;
+      max-width: 66px; text-align: center;
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
     }
-    /* Edit mode banner */
-    #edit-banner {
-      display: none;
-      margin-bottom: 14px;
-      padding: 10px 16px;
-      border-radius: 12px;
-      background: rgba(250,204,21,0.06);
-      border: 1px solid rgba(250,204,21,0.15);
-      color: rgba(250,204,21,0.65);
-      font-size: 12px;
-      text-align: center;
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 9px 18px; border-radius: 12px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; border: none; outline: none;
     }
-    #edit-banner.visible { display: block; }
-    /* Scrollbar */
+    .btn-gold { background: var(--accent); color: #000; }
+    .btn-gold:hover { filter: brightness(1.1); }
+    .btn-ghost {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
+    }
+    .btn-ghost:hover { color: var(--text-base); border-color: rgba(255,255,255,0.25); }
+
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
-    /* Add tile placeholder */
-    .tile-add-placeholder {
-      border-radius: 18px;
-      border: 1.5px dashed rgba(255,255,255,0.1);
-      min-height: 120px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      color: rgba(255,255,255,0.2);
-      font-size: 13px;
-      gap: 8px;
-    }
-    .tile-add-placeholder:hover {
-      border-color: rgba(250,204,21,0.3);
-      background: rgba(250,204,21,0.04);
-      color: rgba(250,204,21,0.5);
-    }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
     @media (max-width: 480px) {
       #tiles-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+      #theme-panel { right: 10px; left: 10px; width: auto; }
     }
   </style>
 </head>
 <body>
+
+<!-- ── TICKER ── -->
+<div id="ticker-bar">
+  <span id="ticker-label">חדשות</span>
+  <div id="ticker-track">
+    <div id="ticker-inner"><span class="ticker-item" style="color:var(--text-muted);">טוען חדשות…</span></div>
+  </div>
+</div>
+
+<!-- ── THEME FAB ── -->
+<button id="theme-fab" onclick="toggleThemePanel()" title="ערכות נושא" aria-label="ערכות נושא">
+  <i data-lucide="palette" style="width:20px;height:20px;"></i>
+</button>
+
+<!-- ── THEME PANEL ── -->
+<div id="theme-panel">
+  <div id="theme-panel-title">
+    <i data-lucide="palette" style="width:12px;height:12px;"></i>
+    ערכות נושא
+  </div>
+  <div id="theme-grid"></div>
+</div>
+
+<!-- ── APP ── -->
 <div id="app" class="min-h-screen">
-  <div style="max-width:960px; margin:0 auto; padding:32px 20px;">
-    <!-- ===== HEADER ===== -->
-    <header class="flex items-start justify-between mb-14 fade-up">
-      <!-- Right: Greeting -->
+  <div style="max-width:980px;margin:0 auto;padding:28px 20px 0;">
+
+    <!-- HEADER -->
+    <header class="flex items-start justify-between mb-10 fade-up">
       <div>
         <div class="flex items-center gap-2 mb-1">
           <span class="pulse-dot" style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
-          <span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);">ברוך הבא</span>
+          <span id="greeting-sub" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);">ברוך הבא</span>
         </div>
-        <h1 style="font-size:clamp(20px,3.5vw,28px);font-weight:600;letter-spacing:-0.02em;">
-          שלום, <span style="color:var(--gold);">ערן</span> ✦
+        <h1 style="font-size:clamp(19px,3.2vw,27px);font-weight:600;letter-spacing:-0.02em;color:var(--text-base);">
+          <span id="greeting-text">שלום</span>, <span style="color:var(--accent);">ערן</span> ✦
         </h1>
       </div>
-      <!-- Left: Clock -->
       <div style="text-align:left;">
         <div id="clock">00:00:00</div>
-        <div id="date-display" style="font-size:11px;letter-spacing:0.08em;color:var(--text-muted);margin-top:5px;text-align:left;"></div>
+        <div id="date-display" style="font-size:11px;letter-spacing:.08em;color:var(--text-muted);margin-top:5px;"></div>
       </div>
     </header>
-    <!-- ===== SECTION BAR ===== -->
-    <div class="flex items-center justify-between mb-4 fade-up" style="animation-delay:0.1s">
-      <div class="flex items-center gap-2">
-        <div style="width:3px;height:18px;border-radius:2px;background:var(--gold);"></div>
-        <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">קישורים מהירים</span>
-        <span id="tile-count" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.28);font-size:10px;padding:2px 9px;border-radius:99px;border:1px solid var(--border);">0</span>
+
+    <!-- SEARCH -->
+    <div id="search-wrap" class="fade-up" style="animation-delay:.08s;">
+      <form id="search-form" onsubmit="doSearch(event)">
+        <i data-lucide="search" style="width:16px;height:16px;color:var(--text-muted);flex-shrink:0;"></i>
+        <input id="search-input" type="text" placeholder="חפש בגוגל…" autocomplete="off" />
+        <button id="search-btn" type="submit">
+          <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>חפש
+        </button>
+      </form>
+    </div>
+
+    <!-- WIDGETS -->
+    <div id="widgets-row" class="fade-up" style="animation-delay:.14s;">
+      <!-- Weather -->
+      <div class="widget-card" id="weather-card">
+        <div class="widget-label">
+          <i data-lucide="cloud-sun" style="width:12px;height:12px;"></i>מזג אוויר
+        </div>
+        <div id="weather-loading">טוען…</div>
+        <div id="weather-content" style="display:none;">
+          <div class="weather-row">
+            <div>
+              <div><span id="weather-temp">--</span><span id="weather-unit">°C</span></div>
+              <div id="weather-desc"></div>
+              <div id="weather-city"></div>
+            </div>
+            <div id="weather-icon-wrap"></div>
+          </div>
+          <div class="weather-extra">
+            <div class="weather-pill"><i data-lucide="thermometer" style="width:11px;height:11px;"></i><span>מרגיש <span id="weather-feels">--</span>°</span></div>
+            <div class="weather-pill"><i data-lucide="droplets" style="width:11px;height:11px;"></i><span>לחות <span id="weather-humidity">--</span>%</span></div>
+            <div class="weather-pill"><i data-lucide="wind" style="width:11px;height:11px;"></i><span>רוח <span id="weather-wind">--</span></span></div>
+            <div class="weather-pill"><i data-lucide="eye" style="width:11px;height:11px;"></i><span><span id="weather-sky">--</span></span></div>
+          </div>
+        </div>
+        <div id="weather-error"></div>
+        <div id="weather-hint">הכנס API Key של <a href="https://openweathermap.org/api" target="_blank" style="color:var(--accent);text-decoration:underline;">OpenWeatherMap</a> בקוד.</div>
       </div>
-      <div class="flex items-center gap-2">
-        <!-- Add tile button (only in edit mode) -->
-        <button id="btn-add" onclick="openModal(null)"
-          class="btn btn-ghost"
-          style="display:none;border-color:var(--gold-border);color:var(--gold);background:var(--gold-dim);">
-          <i data-lucide="plus" style="width:14px;height:14px;"></i>
-          הוסף אריח
-        </button>
-        <!-- Settings toggle -->
-        <button id="btn-settings" onclick="toggleEditMode()" class="btn btn-ghost" style="border:1px solid rgba(255,255,255,0.1);">
-          <i data-lucide="settings" style="width:14px;height:14px;"></i>
-          הגדרות
-        </button>
+      <!-- News -->
+      <div class="widget-card">
+        <div class="widget-label" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <i data-lucide="newspaper" style="width:12px;height:12px;"></i>חדשות — Ynet
+          </span>
+          <button id="news-refresh" onclick="fetchNews()" title="רענן">
+            <i id="news-refresh-icon" data-lucide="refresh-cw" style="width:13px;height:13px;"></i>
+          </button>
+        </div>
+        <div id="news-loading">טוען חדשות…</div>
+        <div id="news-error">שגיאה בטעינת חדשות.</div>
+        <div id="news-list"></div>
       </div>
     </div>
-    <!-- Edit mode banner -->
-    <div id="edit-banner">✎ מצב עריכה פעיל — לחץ על אריח כדי לערוך אותו</div>
-    <!-- ===== TILES GRID ===== -->
-    <div id="tiles-grid" class="fade-up" style="animation-delay:0.2s;"></div>
-    <!-- Footer -->
-    <div class="mt-16 text-center fade-up" style="animation-delay:0.35s;color:rgba(255,255,255,0.1);font-size:11px;letter-spacing:0.1em;">
+
+    <!-- TILES -->
+    <div class="section-bar fade-up" style="animation-delay:.2s;">
+      <div class="section-bar-left">
+        <div class="section-accent"></div>
+        <span class="section-title">קישורים מהירים</span>
+        <span id="tile-count" class="section-badge">0</span>
+      </div>
+      <button onclick="openModal(null)" class="btn btn-ghost"
+        style="border-color:var(--accent-border);color:var(--accent);background:var(--accent-dim);">
+        <i data-lucide="plus" style="width:13px;height:13px;"></i>הוסף אריח
+      </button>
+    </div>
+    <div id="tiles-grid" class="fade-up" style="animation-delay:.26s;"></div>
+
+    <div class="mt-14 text-center fade-up" style="animation-delay:.34s;color:var(--text-muted);font-size:11px;letter-spacing:.1em;opacity:0.4;">
       ✦ הדשבורד האישי של ערן ✦
     </div>
   </div>
 </div>
-<!-- ===== MODAL ===== -->
+
+<!-- ── MODAL ── -->
 <div id="modal-overlay" onclick="handleOverlayClick(event)">
   <div id="modal-box">
-    <!-- Modal Header -->
     <div class="flex items-center justify-between mb-6">
-      <h2 id="modal-title" style="font-size:17px;font-weight:600;color:white;"></h2>
-      <button onclick="closeModal()" class="btn btn-ghost btn-icon">
-        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      <h2 id="modal-title" style="font-size:17px;font-weight:600;color:var(--text-base);"></h2>
+      <button onclick="closeModal()" class="btn btn-ghost" style="width:34px;height:34px;padding:0;border-radius:10px;">
+        <i data-lucide="x" style="width:15px;height:15px;"></i>
       </button>
     </div>
-    <!-- Tile Preview -->
-    <div class="flex justify-center mb-6">
+    <div class="flex justify-center mb-5">
       <div id="tile-preview">
-        <i id="preview-icon" data-lucide="globe" style="width:26px;height:26px;color:rgba(255,255,255,0.85);"></i>
+        <i id="preview-icon" data-lucide="globe" style="width:24px;height:24px;color:rgba(255,255,255,.85);"></i>
         <span id="preview-label">שם</span>
       </div>
     </div>
-    <!-- Form -->
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <!-- Name -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
       <div>
         <label class="modal-label">שם האתר</label>
-        <input id="f-name" type="text" class="modal-input" placeholder="לדוגמה: Gmail" dir="rtl"
-          oninput="updatePreview()" />
+        <input id="f-name" type="text" class="modal-input" placeholder="לדוגמה: Gmail" dir="rtl" oninput="updatePreview()" />
       </div>
-      <!-- URL -->
       <div>
         <label class="modal-label">כתובת URL</label>
         <input id="f-url" type="url" class="modal-input" placeholder="https://..." dir="ltr" />
       </div>
-      <!-- Icon -->
       <div>
         <label class="modal-label">אייקון</label>
         <div style="position:relative;">
-          <button id="icon-trigger" onclick="toggleIconPicker()" class="modal-input flex items-center justify-between" style="cursor:pointer;text-align:right;">
-            <span class="flex items-center gap-2" style="color:white;">
-              <i id="icon-trigger-icon" data-lucide="globe" style="width:15px;height:15px;"></i>
-              <span id="icon-trigger-label">Globe</span>
+          <button id="icon-trigger" onclick="toggleIconPicker()" class="modal-input flex items-center justify-between" style="cursor:pointer;">
+            <span class="flex items-center gap-2" style="color:var(--text-base);">
+              <i id="icon-trigger-icon" data-lucide="globe" style="width:14px;height:14px;"></i>
+              <span id="icon-trigger-label">globe</span>
             </span>
             <i data-lucide="chevron-down" style="width:13px;height:13px;color:var(--text-muted);"></i>
           </button>
           <div id="icon-picker-dropdown"></div>
         </div>
       </div>
-      <!-- Color -->
       <div>
         <label class="modal-label">צבע רקע</label>
         <div id="color-swatches" class="flex flex-wrap gap-2 mb-2"></div>
         <div class="flex items-center gap-2">
           <label style="font-size:12px;color:var(--text-muted);">צבע מותאם:</label>
-          <input id="f-color-custom" type="color" style="width:36px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;cursor:pointer;"
+          <input id="f-color-custom" type="color"
+            style="width:34px;height:26px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;"
             onchange="selectColor(this.value)" />
         </div>
       </div>
     </div>
-    <!-- Actions -->
-    <div class="flex gap-3 mt-7">
+    <div class="flex gap-3 mt-6">
       <button onclick="closeModal()" class="btn btn-ghost" style="flex:1;">ביטול</button>
-      <button onclick="saveTile()" class="btn btn-gold" style="flex:1;">
-        <i data-lucide="check" style="width:15px;height:15px;"></i>
-        שמור
+      <button onclick="saveTile()"   class="btn btn-gold"  style="flex:1;">
+        <i data-lucide="check" style="width:14px;height:14px;"></i>שמור
       </button>
     </div>
   </div>
 </div>
-<!-- ===== SCRIPT ===== -->
+
+<!-- ══════════════════════════════════════════════════════
+     SCRIPT
+══════════════════════════════════════════════════════ -->
 <script>
-  // ── Constants ──────────────────────────────────────────────
-  const STORAGE_KEY = 'eran_dashboard_v2';
-  const ICON_NAMES = [
-    'globe','mail','github','youtube','twitter','linkedin',
-    'rss','music','book-open','code','briefcase','shopping-cart',
-    'camera','coffee','cloud','zap','star','heart','home',
-    'file-text','search','settings','bell','bookmark','map',
-    'monitor','smartphone','terminal','database','send',
-  ];
-  const COLOR_PRESETS = [
-    '#1a1a2e','#16213e','#0f3460','#1b1f23',
-    '#2d6a4f','#1b4332','#3d0000','#003049',
-    '#1a3a4a','#2c3e50','#4a1942','#370617',
-    '#3b1f0a','#0a2a1a','#1a0a3a','#212529',
-  ];
-  const DEFAULT_TILES = [
-    { id:1, name:'Gmail',       url:'https://mail.google.com', icon:'mail',          color:'#1a3a4a' },
-    { id:2, name:'GitHub',      url:'https://github.com',      icon:'github',        color:'#1b1f23' },
-    { id:3, name:'YouTube',     url:'https://youtube.com',     icon:'youtube',       color:'#3d0000' },
-    { id:4, name:'LinkedIn',    url:'https://linkedin.com',    icon:'linkedin',      color:'#003049' },
-    { id:5, name:'Twitter / X', url:'https://x.com',           icon:'twitter',       color:'#0f3460' },
-    { id:6, name:'Google',      url:'https://google.com',      icon:'globe',         color:'#2d6a4f' },
-  ];
-  // ── State ──────────────────────────────────────────────────
-  let tiles = [];
-  let editMode = false;
-  let editingId = null;   // null = new tile
-  let selectedIcon = 'globe';
-  let selectedColor = '#1a1a2e';
-  // ── Load / Save ────────────────────────────────────────────
-  function loadTiles() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      tiles = raw ? JSON.parse(raw) : [...DEFAULT_TILES];
-    } catch { tiles = [...DEFAULT_TILES]; }
-  }
-  function saveTiles() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tiles));
-  }
-  // ── Clock ──────────────────────────────────────────────────
-  const DAY_NAMES  = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  const MONTH_NAMES= ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-  function pad(n){ return String(n).padStart(2,'0'); }
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').textContent =
-      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    document.getElementById('date-display').textContent =
-      `יום ${DAY_NAMES[now.getDay()]}, ${now.getDate()} ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
-  }
-  // ── Render tiles ───────────────────────────────────────────
-  function renderTiles() {
-    const grid = document.getElementById('tiles-grid');
-    document.getElementById('tile-count').textContent = tiles.length;
-    grid.innerHTML = '';
-    tiles.forEach((tile, idx) => {
-      const wrap = document.createElement('div');
-      wrap.style.animationDelay = `${idx * 0.05}s`;
-      wrap.classList.add('fade-up');
-      wrap.innerHTML = buildTileHTML(tile);
-      grid.appendChild(wrap);
-    });
-    // Add placeholder when in edit mode
-    if (editMode) {
-      const ph = document.createElement('div');
-      ph.classList.add('tile-add-placeholder');
-      ph.onclick = () => openModal(null);
-      ph.innerHTML = `<i data-lucide="plus" style="width:18px;height:18px;"></i><span>הוסף אריח</span>`;
-      grid.appendChild(ph);
+/* ════════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════════ */
+const WEATHER_API_KEY = 'YOUR_API_KEY';
+const WEATHER_CITY    = 'Tel Aviv';
+
+/* ════════════════════════════════════════════════════
+   THEMES — 10 פלטות
+   כל ערכה מגדירה את כל CSS variables של העמוד
+════════════════════════════════════════════════════ */
+const THEMES = [
+  {
+    id: 'midnight', name: 'Midnight', subtitle: 'ברירת מחדל',
+    swatches: ['#080810','#1a1040','#facc15','#1a1a2e'],
+    vars: {
+      '--accent':'#facc15','--accent-dim':'rgba(250,204,21,0.13)','--accent-border':'rgba(250,204,21,0.28)',
+      '--bg-base':'#080810','--bg-grad-a':'#1a1040','--bg-grad-b':'#0f2040',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(255,255,255,0.08)',
+      '--text-base':'#ffffff','--text-dim':'rgba(255,255,255,0.55)','--text-muted':'rgba(255,255,255,0.35)',
+      '--tile-default':'#1a1a2e','--ticker-bg':'rgba(8,8,16,0.92)','--grid-opacity':'0.017',
     }
-    lucide.createIcons();
+  },
+  {
+    id: 'forest', name: 'Forest', subtitle: 'ירוק עמוק',
+    swatches: ['#071210','#0d2b1f','#4ade80','#122a1e'],
+    vars: {
+      '--accent':'#4ade80','--accent-dim':'rgba(74,222,128,0.12)','--accent-border':'rgba(74,222,128,0.3)',
+      '--bg-base':'#071210','--bg-grad-a':'#0d2b1f','--bg-grad-b':'#061a10',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(255,255,255,0.08)',
+      '--text-base':'#efffee','--text-dim':'rgba(220,255,220,0.55)','--text-muted':'rgba(200,240,200,0.35)',
+      '--tile-default':'#122a1e','--ticker-bg':'rgba(7,18,16,0.92)','--grid-opacity':'0.015',
+    }
+  },
+  {
+    id: 'cyberpunk', name: 'Cyberpunk', subtitle: 'ניאון עתידני',
+    swatches: ['#060610','#0a0020','#f0abfc','#1a003a'],
+    vars: {
+      '--accent':'#f0abfc','--accent-dim':'rgba(240,171,252,0.12)','--accent-border':'rgba(240,171,252,0.3)',
+      '--bg-base':'#060610','--bg-grad-a':'#0a0020','--bg-grad-b':'#001a30',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(240,171,252,0.1)',
+      '--text-base':'#fdf4ff','--text-dim':'rgba(253,244,255,0.55)','--text-muted':'rgba(240,171,252,0.4)',
+      '--tile-default':'#1a003a','--ticker-bg':'rgba(6,6,16,0.94)','--grid-opacity':'0.02',
+    }
+  },
+  {
+    id: 'nordic', name: 'Nordic', subtitle: 'קר ונקי',
+    swatches: ['#1a1f2e','#2e3444','#88c0d0','#252c3c'],
+    vars: {
+      '--accent':'#88c0d0','--accent-dim':'rgba(136,192,208,0.12)','--accent-border':'rgba(136,192,208,0.28)',
+      '--bg-base':'#1a1f2e','--bg-grad-a':'#1f2638','--bg-grad-b':'#141824',
+      '--surface':'rgba(255,255,255,0.05)','--surface-card':'rgba(255,255,255,0.04)',
+      '--border':'rgba(255,255,255,0.09)',
+      '--text-base':'#eceff4','--text-dim':'rgba(236,239,244,0.6)','--text-muted':'rgba(216,222,233,0.4)',
+      '--tile-default':'#252c3c','--ticker-bg':'rgba(20,24,36,0.95)','--grid-opacity':'0.02',
+    }
+  },
+  {
+    id: 'sunrise', name: 'Sunrise', subtitle: 'אדום-כתום',
+    swatches: ['#100808','#2a0f0a','#fb923c','#2a1008'],
+    vars: {
+      '--accent':'#fb923c','--accent-dim':'rgba(251,146,60,0.12)','--accent-border':'rgba(251,146,60,0.28)',
+      '--bg-base':'#100808','--bg-grad-a':'#2a0f0a','--bg-grad-b':'#200800',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(255,255,255,0.08)',
+      '--text-base':'#fff8f5','--text-dim':'rgba(255,240,230,0.55)','--text-muted':'rgba(255,220,200,0.38)',
+      '--tile-default':'#2a1008','--ticker-bg':'rgba(16,8,8,0.93)','--grid-opacity':'0.016',
+    }
+  },
+  {
+    id: 'ocean', name: 'Ocean', subtitle: 'כחול עמוק',
+    swatches: ['#060d1a','#0a1f3c','#38bdf8','#0d2240'],
+    vars: {
+      '--accent':'#38bdf8','--accent-dim':'rgba(56,189,248,0.12)','--accent-border':'rgba(56,189,248,0.28)',
+      '--bg-base':'#060d1a','--bg-grad-a':'#0a1f3c','--bg-grad-b':'#041020',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(255,255,255,0.08)',
+      '--text-base':'#f0f9ff','--text-dim':'rgba(240,249,255,0.58)','--text-muted':'rgba(186,230,253,0.4)',
+      '--tile-default':'#0d2240','--ticker-bg':'rgba(6,13,26,0.94)','--grid-opacity':'0.018',
+    }
+  },
+  {
+    id: 'rose', name: 'Rose Gold', subtitle: 'ורדרד אלגנטי',
+    swatches: ['#140a0d','#2a1018','#fda4af','#240d14'],
+    vars: {
+      '--accent':'#fda4af','--accent-dim':'rgba(253,164,175,0.12)','--accent-border':'rgba(253,164,175,0.28)',
+      '--bg-base':'#140a0d','--bg-grad-a':'#2a1018','--bg-grad-b':'#1a0810',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(255,255,255,0.08)',
+      '--text-base':'#fff1f3','--text-dim':'rgba(255,241,243,0.55)','--text-muted':'rgba(253,164,175,0.45)',
+      '--tile-default':'#240d14','--ticker-bg':'rgba(20,10,13,0.94)','--grid-opacity':'0.016',
+    }
+  },
+  {
+    id: 'sand', name: 'Sand', subtitle: 'בז׳ חם',
+    swatches: ['#1a1610','#2c2418','#fbbf24','#26200e'],
+    vars: {
+      '--accent':'#fbbf24','--accent-dim':'rgba(251,191,36,0.12)','--accent-border':'rgba(251,191,36,0.28)',
+      '--bg-base':'#1a1610','--bg-grad-a':'#2c2418','--bg-grad-b':'#201a0c',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(255,255,255,0.08)',
+      '--text-base':'#fefce8','--text-dim':'rgba(254,252,232,0.58)','--text-muted':'rgba(251,191,36,0.42)',
+      '--tile-default':'#26200e','--ticker-bg':'rgba(26,22,16,0.94)','--grid-opacity':'0.016',
+    }
+  },
+  {
+    id: 'mono', name: 'Mono', subtitle: 'שחור-לבן',
+    swatches: ['#0a0a0a','#141414','#e5e5e5','#1c1c1c'],
+    vars: {
+      '--accent':'#e5e5e5','--accent-dim':'rgba(229,229,229,0.1)','--accent-border':'rgba(229,229,229,0.25)',
+      '--bg-base':'#0a0a0a','--bg-grad-a':'#141414','--bg-grad-b':'#0f0f0f',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(255,255,255,0.08)',
+      '--text-base':'#f5f5f5','--text-dim':'rgba(245,245,245,0.55)','--text-muted':'rgba(245,245,245,0.35)',
+      '--tile-default':'#1c1c1c','--ticker-bg':'rgba(10,10,10,0.94)','--grid-opacity':'0.014',
+    }
+  },
+  {
+    id: 'aurora', name: 'Aurora', subtitle: 'ירוק-כחול זוהר',
+    swatches: ['#060f12','#0a2020','#34d399','#0d2a22'],
+    vars: {
+      '--accent':'#34d399','--accent-dim':'rgba(52,211,153,0.12)','--accent-border':'rgba(52,211,153,0.28)',
+      '--bg-base':'#060f12','--bg-grad-a':'#0a2020','--bg-grad-b':'#061428',
+      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--border':'rgba(255,255,255,0.08)',
+      '--text-base':'#ecfdf5','--text-dim':'rgba(236,253,245,0.55)','--text-muted':'rgba(110,231,183,0.42)',
+      '--tile-default':'#0d2a22','--ticker-bg':'rgba(6,15,18,0.94)','--grid-opacity':'0.016',
+    }
+  },
+];
+
+/* ════════════════════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════════════════════ */
+const STORAGE_KEY       = 'eran_dashboard_v3';
+const THEME_STORAGE_KEY = 'eran_dashboard_theme';
+
+const ICON_NAMES = [
+  'globe','mail','github','youtube','twitter','linkedin',
+  'rss','music','book-open','code','briefcase','shopping-cart',
+  'camera','coffee','cloud','zap','star','heart','home',
+  'file-text','search','settings','bell','bookmark','map',
+  'monitor','smartphone','terminal','database','send',
+];
+
+const COLOR_PRESETS = [
+  '#1a1a2e','#16213e','#0f3460','#1b1f23',
+  '#2d6a4f','#1b4332','#3d0000','#003049',
+  '#1a3a4a','#2c3e50','#4a1942','#370617',
+  '#3b1f0a','#0a2a1a','#1a0a3a','#212529',
+];
+
+const DEFAULT_TILES = [
+  { id:1, name:'Gmail',       url:'https://mail.google.com', icon:'mail',    color:'#1a3a4a' },
+  { id:2, name:'GitHub',      url:'https://github.com',      icon:'github',  color:'#1b1f23' },
+  { id:3, name:'YouTube',     url:'https://youtube.com',     icon:'youtube', color:'#3d0000' },
+  { id:4, name:'LinkedIn',    url:'https://linkedin.com',    icon:'linkedin',color:'#003049' },
+  { id:5, name:'Twitter / X', url:'https://x.com',           icon:'twitter', color:'#0f3460' },
+  { id:6, name:'Google',      url:'https://google.com',      icon:'globe',   color:'#2d6a4f' },
+];
+
+const WX_ICONS = {
+  '01d':'☀️','01n':'🌙','02d':'⛅','02n':'⛅','03d':'☁️','03n':'☁️',
+  '04d':'☁️','04n':'☁️','09d':'🌧️','09n':'🌧️','10d':'🌦️','10n':'🌧️',
+  '11d':'⛈️','11n':'⛈️','13d':'❄️','13n':'❄️','50d':'🌫️','50n':'🌫️',
+};
+
+/* ════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════ */
+let tiles         = [];
+let editingId     = null;
+let selectedIcon  = 'globe';
+let selectedColor = '#1a1a2e';
+let openMenuId    = null;
+let activeThemeId = 'midnight';
+let themePanelOpen = false;
+
+/* ════════════════════════════════════════════════════
+   THEME ENGINE
+════════════════════════════════════════════════════ */
+function applyTheme(id, save = true) {
+  const theme = THEMES.find(t => t.id === id);
+  if (!theme) return;
+  activeThemeId = id;
+
+  const root = document.documentElement;
+  Object.entries(theme.vars).forEach(([key, val]) => root.style.setProperty(key, val));
+
+  if (save) localStorage.setItem(THEME_STORAGE_KEY, id);
+  renderThemeGrid();
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem(THEME_STORAGE_KEY) || 'midnight';
+  applyTheme(saved, false);
+}
+
+function toggleThemePanel() {
+  themePanelOpen = !themePanelOpen;
+  const panel = document.getElementById('theme-panel');
+  const fab   = document.getElementById('theme-fab');
+  if (themePanelOpen) {
+    panel.classList.add('open');
+    fab.classList.add('open');
+    renderThemeGrid();
+  } else {
+    panel.classList.remove('open');
+    fab.classList.remove('open');
   }
-  function buildTileHTML(tile) {
-    const urlClean = tile.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    const editClass = editMode ? ' edit-mode-active' : '';
+}
+
+function renderThemeGrid() {
+  const grid = document.getElementById('theme-grid');
+  grid.innerHTML = THEMES.map(t => {
+    const swatchHTML = t.swatches.map(c =>
+      `<span class="theme-swatch" style="background:${c};"></span>`).join('');
     return `
-      <a
-        class="tile${editClass}"
-        style="--tile-color:${tile.color};"
-        href="${editMode ? '#' : tile.url}"
-        target="${editMode ? '_self' : '_blank'}"
-        rel="noopener noreferrer"
-        onclick="${editMode ? 'return false;' : ''}"
-      >
-        <!-- Edit overlay -->
-        <div class="tile-edit-overlay">
-          <button class="btn btn-icon btn-edit-tile" onclick="event.preventDefault();openModal(${tile.id})">
-            <i data-lucide="edit-3" style="width:15px;height:15px;"></i>
-          </button>
-          <button class="btn btn-icon btn-del-tile" onclick="event.preventDefault();deleteTile(${tile.id})">
-            <i data-lucide="trash-2" style="width:15px;height:15px;"></i>
-          </button>
-        </div>
-        <div class="tile-icon-wrap">
-          <i data-lucide="${tile.icon}" style="width:20px;height:20px;color:rgba(255,255,255,0.85);"></i>
-        </div>
-        <div class="tile-name">${escapeHTML(tile.name)}</div>
-        <div class="tile-url">${escapeHTML(urlClean)}</div>
-      </a>
+      <div class="theme-card ${t.id === activeThemeId ? 'active' : ''}"
+        style="background:${t.swatches[0]};border-color:${t.id === activeThemeId ? t.vars['--accent'] : 'rgba(255,255,255,0.08)'};"
+        onclick="applyTheme('${t.id}')">
+        <div class="theme-swatches">${swatchHTML}</div>
+        <div class="theme-name">${t.name}</div>
+        <div class="theme-subtitle">${t.subtitle}</div>
+      </div>
     `;
+  }).join('');
+}
+
+// Close theme panel on outside click
+document.addEventListener('click', e => {
+  if (themePanelOpen &&
+      !e.target.closest('#theme-panel') &&
+      !e.target.closest('#theme-fab')) {
+    themePanelOpen = false;
+    document.getElementById('theme-panel').classList.remove('open');
+    document.getElementById('theme-fab').classList.remove('open');
   }
-  function escapeHTML(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+});
+
+/* ════════════════════════════════════════════════════
+   STORAGE
+════════════════════════════════════════════════════ */
+function loadTiles() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    tiles = raw ? JSON.parse(raw) : [...DEFAULT_TILES];
+  } catch { tiles = [...DEFAULT_TILES]; }
+}
+function saveTiles() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tiles)); }
+
+/* ════════════════════════════════════════════════════
+   CLOCK & GREETING
+════════════════════════════════════════════════════ */
+const DAY_NAMES   = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const MONTH_NAMES = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const pad = n => String(n).padStart(2,'0');
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('date-display').textContent =
+    `יום ${DAY_NAMES[now.getDay()]}, ${now.getDate()} ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+  const h = now.getHours();
+  let g = 'שלום', sub = 'ברוך הבא';
+  if      (h >= 5  && h < 12) { g = 'בוקר טוב';      sub = 'יום טוב מתחיל';  }
+  else if (h >= 12 && h < 17) { g = 'צהריים טובים';  sub = 'המשך יום נעים';  }
+  else if (h >= 17 && h < 21) { g = 'ערב טוב';        sub = 'שעת הרפיה';      }
+  else                         { g = 'לילה טוב';       sub = 'מנוחה נעימה';    }
+  document.getElementById('greeting-text').textContent = g;
+  document.getElementById('greeting-sub').textContent  = sub;
+}
+
+/* ════════════════════════════════════════════════════
+   SEARCH
+════════════════════════════════════════════════════ */
+function doSearch(e) {
+  e.preventDefault();
+  const q = document.getElementById('search-input').value.trim();
+  if (q) window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank');
+}
+
+/* ════════════════════════════════════════════════════
+   WEATHER
+════════════════════════════════════════════════════ */
+async function fetchWeather() {
+  const loadEl = document.getElementById('weather-loading');
+  const contEl = document.getElementById('weather-content');
+  const errEl  = document.getElementById('weather-error');
+  const hintEl = document.getElementById('weather-hint');
+
+  if (WEATHER_API_KEY === 'YOUR_API_KEY') {
+    loadEl.style.display  = 'none';
+    errEl.textContent     = '⚠️ לא הוגדר API Key';
+    errEl.style.display   = 'block';
+    hintEl.style.display  = 'block';
+    return;
   }
-  // ── Edit mode ──────────────────────────────────────────────
-  function toggleEditMode() {
-    editMode = !editMode;
-    const btn = document.getElementById('btn-settings');
-    const addBtn = document.getElementById('btn-add');
-    const banner = document.getElementById('edit-banner');
-    if (editMode) {
-      btn.classList.add('btn-settings-active');
-      btn.innerHTML = `<i data-lucide="x" style="width:14px;height:14px;"></i> סיום עריכה`;
-      addBtn.style.display = 'inline-flex';
-      banner.classList.add('visible');
-    } else {
-      btn.classList.remove('btn-settings-active');
-      btn.innerHTML = `<i data-lucide="settings" style="width:14px;height:14px;"></i> הגדרות`;
-      addBtn.style.display = 'none';
-      banner.classList.remove('visible');
-    }
+  loadEl.style.display  = 'block';
+  contEl.style.display  = 'none';
+  errEl.style.display   = 'none';
+  try {
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(WEATHER_CITY)}&appid=${WEATHER_API_KEY}&units=metric&lang=he`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    document.getElementById('weather-temp').textContent     = Math.round(d.main.temp);
+    document.getElementById('weather-desc').textContent     = d.weather[0].description;
+    document.getElementById('weather-city').textContent     = d.name;
+    document.getElementById('weather-feels').textContent    = Math.round(d.main.feels_like);
+    document.getElementById('weather-humidity').textContent = d.main.humidity;
+    document.getElementById('weather-wind').textContent     = `${Math.round(d.wind.speed * 3.6)} קמ"ש`;
+    document.getElementById('weather-sky').textContent      = d.clouds.all < 20 ? 'שמיים בהירים' : d.clouds.all < 60 ? 'מעונן חלקית' : 'מעונן';
+    document.getElementById('weather-icon-wrap').textContent = WX_ICONS[d.weather[0].icon] || '🌡️';
+    loadEl.style.display  = 'none';
+    contEl.style.display  = 'block';
     lucide.createIcons();
-    renderTiles();
+  } catch(err) {
+    loadEl.style.display  = 'none';
+    errEl.textContent     = `שגיאה: ${err.message}`;
+    errEl.style.display   = 'block';
   }
-  // ── Delete tile ────────────────────────────────────────────
-  function deleteTile(id) {
-    tiles = tiles.filter(t => t.id !== id);
-    saveTiles();
-    renderTiles();
-  }
-  // ── Modal ──────────────────────────────────────────────────
-  function openModal(id) {
-    editingId = id;
-    const isNew = id === null;
-    document.getElementById('modal-title').textContent = isNew ? 'אריח חדש' : 'עריכת אריח';
-    document.getElementById('modal-overlay').classList.add('open');
-    if (!isNew) {
-      const tile = tiles.find(t => t.id === id);
-      document.getElementById('f-name').value = tile.name;
-      document.getElementById('f-url').value = tile.url;
-      selectIcon(tile.icon, false);
-      selectColor(tile.color);
-    } else {
-      document.getElementById('f-name').value = '';
-      document.getElementById('f-url').value = '';
-      selectIcon('globe', false);
-      selectColor('#1a3a4a');
-    }
-    buildIconPicker();
-    buildColorSwatches();
-    updatePreview();
-  }
-  function closeModal() {
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.getElementById('icon-picker-dropdown').classList.remove('open');
-  }
-  function handleOverlayClick(e) {
-    if (e.target === document.getElementById('modal-overlay')) closeModal();
-  }
-  function saveTile() {
-    const name = document.getElementById('f-name').value.trim();
-    const url  = document.getElementById('f-url').value.trim();
-    if (!name) { alert('אנא הכנס שם לאריח'); return; }
-    if (!url)  { alert('אנא הכנס כתובת URL'); return; }
-    if (editingId === null) {
-      tiles.push({ id: Date.now(), name, url, icon: selectedIcon, color: selectedColor });
-    } else {
-      tiles = tiles.map(t =>
-        t.id === editingId ? { ...t, name, url, icon: selectedIcon, color: selectedColor } : t
-      );
-    }
-    saveTiles();
-    closeModal();
-    renderTiles();
-  }
-  // ── Icon picker ────────────────────────────────────────────
-  function buildIconPicker() {
-    const dp = document.getElementById('icon-picker-dropdown');
-    dp.innerHTML = ICON_NAMES.map(name => `
-      <button class="icon-opt ${name === selectedIcon ? 'selected' : ''}"
-        onclick="selectIcon('${name}', true)" title="${name}">
-        <i data-lucide="${name}" style="width:16px;height:16px;"></i>
-      </button>
-    `).join('');
-    lucide.createIcons();
-  }
-  function toggleIconPicker() {
-    const dp = document.getElementById('icon-picker-dropdown');
-    dp.classList.toggle('open');
-    if (dp.classList.contains('open')) buildIconPicker();
-  }
-  function selectIcon(name, closeDropdown) {
-    selectedIcon = name;
-    // Update trigger button
-    document.getElementById('icon-trigger-label').textContent = name;
-    const trigIcon = document.getElementById('icon-trigger-icon');
-    trigIcon.setAttribute('data-lucide', name);
-    lucide.createIcons({ nodes: [trigIcon] });
-    if (closeDropdown) {
-      document.getElementById('icon-picker-dropdown').classList.remove('open');
-    }
-    // Highlight selected in picker
-    document.querySelectorAll('.icon-opt').forEach(el => {
-      el.classList.toggle('selected', el.title === name);
+}
+
+/* ════════════════════════════════════════════════════
+   NEWS
+════════════════════════════════════════════════════ */
+const NEWS_RSS = 'https://www.ynet.co.il/Integration/StoryRss2.xml';
+function timeAgo(ds) {
+  if (!ds) return '';
+  const s = (Date.now() - new Date(ds)) / 1000;
+  if (s < 60) return 'עכשיו';
+  if (s < 3600) return `${Math.floor(s/60)}ד'`;
+  if (s < 86400) return `${Math.floor(s/3600)}ש'`;
+  return `${Math.floor(s/86400)}י'`;
+}
+
+async function fetchNews() {
+  const loadEl  = document.getElementById('news-loading');
+  const errEl   = document.getElementById('news-error');
+  const listEl  = document.getElementById('news-list');
+  const icon    = document.getElementById('news-refresh-icon');
+  icon.classList.add('spinning');
+  loadEl.style.display  = 'block';
+  errEl.style.display   = 'none';
+  listEl.innerHTML      = '';
+  try {
+    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(NEWS_RSS)}&count=7`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error();
+    loadEl.style.display = 'none';
+    data.items.forEach(item => {
+      const a = document.createElement('a');
+      a.className = 'news-item';
+      a.href = item.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      const title = item.title.replace(/<[^>]*>/g,'').trim();
+      a.innerHTML = `<span class="news-dot"></span><span class="news-headline">${title}</span><span class="news-time">${timeAgo(item.pubDate)}</span>`;
+      listEl.appendChild(a);
     });
-    updatePreview();
+    buildTicker(data.items);
+  } catch {
+    loadEl.style.display  = 'none';
+    errEl.textContent     = 'שגיאה בטעינת חדשות.';
+    errEl.style.display   = 'block';
   }
-  // ── Color picker ───────────────────────────────────────────
-  function buildColorSwatches() {
-    const wrap = document.getElementById('color-swatches');
-    wrap.innerHTML = COLOR_PRESETS.map(c => `
-      <button class="color-swatch ${c === selectedColor ? 'selected' : ''}"
-        style="background:${c};" onclick="selectColor('${c}')"></button>
-    `).join('');
-  }
-  function selectColor(color) {
-    selectedColor = color;
-    document.getElementById('f-color-custom').value = color;
-    document.querySelectorAll('.color-swatch').forEach(el => {
-      el.classList.toggle('selected', el.style.background === color ||
-        el.style.background === hexToRgb(color));
-    });
-    updatePreview();
-  }
-  // naive hex→rgb string comparison helper
-  function hexToRgb(hex) {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-  // ── Live preview ───────────────────────────────────────────
-  function updatePreview() {
-    const name = document.getElementById('f-name').value || 'שם';
-    document.getElementById('preview-label').textContent = name;
-    document.getElementById('tile-preview').style.background = selectedColor;
-    const previewIcon = document.getElementById('preview-icon');
-    previewIcon.setAttribute('data-lucide', selectedIcon);
-    lucide.createIcons({ nodes: [previewIcon] });
-  }
-  // ── Init ───────────────────────────────────────────────────
-  loadTiles();
-  renderTiles();
-  updateClock();
-  setInterval(updateClock, 1000);
+  icon.classList.remove('spinning');
+}
+
+/* ════════════════════════════════════════════════════
+   TICKER
+════════════════════════════════════════════════════ */
+function buildTicker(items) {
+  const html = items.map(i => {
+    const t = i.title.replace(/<[^>]*>/g,'').trim();
+    return `<a class="ticker-item" href="${i.link}" target="_blank" rel="noopener noreferrer"><span style="color:var(--accent);opacity:.5;">◆</span> ${t}</a>`;
+  }).join('');
+  document.getElementById('ticker-inner').innerHTML = html + html;
+}
+
+/* ════════════════════════════════════════════════════
+   TILES
+════════════════════════════════════════════════════ */
+function renderTiles() {
+  const grid = document.getElementById('tiles-grid');
+  document.getElementById('tile-count').textContent = tiles.length;
+  grid.innerHTML = '';
+  tiles.forEach((tile, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'tile-wrap fade-up';
+    wrap.style.animationDelay = `${idx * 0.04}s`;
+    wrap.innerHTML = buildTileHTML(tile);
+    grid.appendChild(wrap);
+  });
+  const ph = document.createElement('div');
+  ph.className = 'tile-add-placeholder fade-up';
+  ph.style.animationDelay = `${tiles.length * 0.04}s`;
+  ph.onclick = () => openModal(null);
+  ph.innerHTML = `<i data-lucide="plus" style="width:18px;height:18px;"></i><span>הוסף</span>`;
+  grid.appendChild(ph);
   lucide.createIcons();
+}
+
+function buildTileHTML(tile) {
+  const clean = tile.url.replace(/^https?:\/\//,'').replace(/\/$/,'');
+  return `
+    <button class="tile-menu-btn" id="menu-btn-${tile.id}" onclick="toggleMenu(event,${tile.id})" title="אפשרויות">
+      <i data-lucide="more-vertical" style="width:13px;height:13px;"></i>
+    </button>
+    <div class="tile-dropdown" id="dropdown-${tile.id}">
+      <button class="dd-item" onclick="closeMenu();openModal(${tile.id})">
+        <i data-lucide="pencil" style="width:12px;height:12px;"></i>ערוך
+      </button>
+      <div class="dd-sep"></div>
+      <button class="dd-item danger" onclick="closeMenu();deleteTile(${tile.id})">
+        <i data-lucide="trash-2" style="width:12px;height:12px;"></i>מחק
+      </button>
+    </div>
+    <a class="tile" style="--tile-color:${tile.color};" href="${escapeHTML(tile.url)}" target="_blank" rel="noopener noreferrer">
+      <div class="tile-icon-wrap">
+        <i data-lucide="${tile.icon}" style="width:19px;height:19px;color:rgba(255,255,255,.85);"></i>
+      </div>
+      <div class="tile-name">${escapeHTML(tile.name)}</div>
+      <div class="tile-url">${escapeHTML(clean)}</div>
+    </a>`;
+}
+
+function escapeHTML(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* Three-dot menu */
+function toggleMenu(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  if (openMenuId === id) { closeMenu(); return; }
+  closeMenu(); openMenuId = id;
+  document.getElementById(`dropdown-${id}`).classList.add('open');
+  document.getElementById(`menu-btn-${id}`).classList.add('menu-open');
+}
+function closeMenu() {
+  if (!openMenuId) return;
+  document.getElementById(`dropdown-${openMenuId}`)?.classList.remove('open');
+  document.getElementById(`menu-btn-${openMenuId}`)?.classList.remove('menu-open');
+  openMenuId = null;
+}
+document.addEventListener('click', e => { if (!e.target.closest('.tile-wrap')) closeMenu(); });
+
+function deleteTile(id) { tiles = tiles.filter(t => t.id !== id); saveTiles(); renderTiles(); }
+
+/* Modal */
+function openModal(id) {
+  editingId = id;
+  document.getElementById('modal-title').textContent = id === null ? 'אריח חדש' : 'עריכת אריח';
+  document.getElementById('modal-overlay').classList.add('open');
+  if (id !== null) {
+    const t = tiles.find(t => t.id === id);
+    document.getElementById('f-name').value = t.name;
+    document.getElementById('f-url').value  = t.url;
+    selectIcon(t.icon, false); selectColor(t.color);
+  } else {
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-url').value  = '';
+    selectIcon('globe', false); selectColor('#1a3a4a');
+  }
+  buildIconPicker(); buildColorSwatches(); updatePreview();
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('icon-picker-dropdown').classList.remove('open');
+}
+function handleOverlayClick(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+function saveTile() {
+  const name = document.getElementById('f-name').value.trim();
+  const url  = document.getElementById('f-url').value.trim();
+  if (!name) { alert('אנא הכנס שם לאריח'); return; }
+  if (!url)  { alert('אנא הכנס כתובת URL'); return; }
+  if (editingId === null) {
+    tiles.push({ id: Date.now(), name, url, icon: selectedIcon, color: selectedColor });
+  } else {
+    tiles = tiles.map(t => t.id === editingId ? {...t, name, url, icon:selectedIcon, color:selectedColor} : t);
+  }
+  saveTiles(); closeModal(); renderTiles();
+}
+
+/* Icon picker */
+function buildIconPicker() {
+  const dp = document.getElementById('icon-picker-dropdown');
+  dp.innerHTML = ICON_NAMES.map(n =>
+    `<button class="icon-opt ${n===selectedIcon?'selected':''}" onclick="selectIcon('${n}',true)" title="${n}">
+      <i data-lucide="${n}" style="width:15px;height:15px;"></i></button>`).join('');
+  lucide.createIcons();
+}
+function toggleIconPicker() {
+  const dp = document.getElementById('icon-picker-dropdown');
+  dp.classList.toggle('open');
+  if (dp.classList.contains('open')) buildIconPicker();
+}
+function selectIcon(name, close) {
+  selectedIcon = name;
+  document.getElementById('icon-trigger-label').textContent = name;
+  const ti = document.getElementById('icon-trigger-icon');
+  ti.setAttribute('data-lucide', name);
+  lucide.createIcons({ nodes: [ti] });
+  if (close) document.getElementById('icon-picker-dropdown').classList.remove('open');
+  document.querySelectorAll('.icon-opt').forEach(el => el.classList.toggle('selected', el.title === name));
+  updatePreview();
+}
+
+/* Color picker */
+function buildColorSwatches() {
+  document.getElementById('color-swatches').innerHTML = COLOR_PRESETS.map(c =>
+    `<button class="color-swatch ${c===selectedColor?'selected':''}" style="background:${c};" onclick="selectColor('${c}')"></button>`
+  ).join('');
+}
+function selectColor(color) {
+  selectedColor = color;
+  document.getElementById('f-color-custom').value = color;
+  const rgb = `rgb(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)})`;
+  document.querySelectorAll('.color-swatch').forEach(el =>
+    el.classList.toggle('selected', el.style.background === color || el.style.background === rgb));
+  updatePreview();
+}
+function updatePreview() {
+  document.getElementById('preview-label').textContent = document.getElementById('f-name').value || 'שם';
+  document.getElementById('tile-preview').style.background = selectedColor;
+  const pi = document.getElementById('preview-icon');
+  pi.setAttribute('data-lucide', selectedIcon);
+  lucide.createIcons({ nodes: [pi] });
+}
+
+/* ════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════ */
+loadTheme();        // ← apply saved theme first (before render)
+loadTiles();
+renderTiles();
+updateClock();
+setInterval(updateClock, 1000);
+fetchWeather();
+fetchNews();
+setInterval(fetchNews, 10 * 60 * 1000);
+lucide.createIcons();
 </script>
 </body>
 </html>
