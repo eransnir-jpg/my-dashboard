@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>הדשבורד של ערן</title>
+  <title id="page-title">הדשבורד של ערן</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,62 +17,75 @@
        כל הצבעים בעמוד נגזרים ממשתנים אלו בלבד
     ══════════════════════════════════════════════════════ */
     :root {
-      /* accent / gold */
+      /* accent */
       --accent:         #facc15;
       --accent-dim:     rgba(250,204,21,0.13);
       --accent-border:  rgba(250,204,21,0.28);
 
-      /* backgrounds */
-      --bg-base:        #080810;
-      --bg-grad-a:      #1a1040;   /* radial top-left */
-      --bg-grad-b:      #0f2040;   /* radial bottom-right */
+      /* ── App background (used by body + transition) ── */
+      --app-bg:         #080810;
+      --bg-grad-a:      #1a1040;
+      --bg-grad-b:      #0f2040;
+
+      /* ── Tile background (theme default, overridable per-tile) ── */
+      --tile-bg:        #1a1a2e;
 
       /* surfaces */
       --surface:        rgba(255,255,255,0.04);
-      --surface-card:   rgba(255,255,255,0.03);
       --border:         rgba(255,255,255,0.08);
 
-      /* text */
-      --text-base:      #ffffff;
+      /* ── Text ── */
+      --text-color:     #ffffff;
       --text-dim:       rgba(255,255,255,0.55);
       --text-muted:     rgba(255,255,255,0.35);
 
-      /* tile defaults when user has not set a custom color */
-      --tile-default:   #1a1a2e;
-
-      /* ticker bar */
-      --ticker-bg:      rgba(8,8,16,0.92);
-
-      /* grid overlay opacity */
+      /* grid overlay */
       --grid-opacity:   0.017;
+      /* icon color on tiles */
+      --icon-color:     rgba(255,255,255,0.85);
+
+      /* legacy aliases so existing CSS still works */
+      --bg-base:        var(--app-bg);
+      --text-base:      var(--text-color);
+      --tile-default:   var(--tile-bg);
     }
 
     /* ── Global transition for smooth theme switching ── */
     *, *::before, *::after {
       box-sizing: border-box;
       transition:
-        background-color 0.4s ease,
+        background-color 0.45s ease,
+        background       0.45s ease,
         border-color     0.35s ease,
         color            0.3s ease,
         box-shadow       0.3s ease;
     }
-    /* keep hover/transform transitions snappy */
-    .tile, .tile-menu-btn, .btn, .news-item, .theme-card { transition: none !important; }
-    .tile { transition: transform 0.25s ease, box-shadow 0.25s ease !important; }
-    .btn  { transition: background 0.2s, border-color 0.2s, color 0.2s !important; }
+    /* keep interactive transitions snappy */
+    .tile        { transition: transform 0.25s ease, box-shadow 0.25s ease,
+                               background-color 0.45s ease, border-color 0.35s ease !important; }
+    .tile-menu-btn { transition: opacity 0.18s, background 0.18s !important; }
+    .btn         { transition: background 0.2s, border-color 0.2s, color 0.2s, filter 0.2s !important; }
+    .theme-card  { transition: border-color 0.2s, transform 0.18s !important; }
 
     html, body {
       margin: 0; padding: 0; min-height: 100vh;
       font-family: 'DM Sans', sans-serif;
-      color: var(--text-base); overflow-x: hidden;
+      color: var(--text-color); overflow-x: hidden;
     }
+    /* background-color is set directly via JS in applyTheme() */
     body {
+      background-color: #080810;
+    }
+    /* Gradient overlay in pseudo-element — doesn't block bg-color transition */
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
       background:
         radial-gradient(ellipse 80% 50% at 15% -5%, var(--bg-grad-a) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 85% 100%, var(--bg-grad-b) 0%, transparent 60%),
-        var(--bg-base);
+        radial-gradient(ellipse 60% 40% at 85% 100%, var(--bg-grad-b) 0%, transparent 60%);
     }
-    body::before {
+    /* Grid texture in a separate fixed layer */
+    body::after {
       content: ''; position: fixed; inset: 0;
       pointer-events: none; z-index: 0;
       background-image:
@@ -80,14 +93,94 @@
         linear-gradient(90deg, rgba(255,255,255,var(--grid-opacity)) 1px, transparent 1px);
       background-size: 44px 44px;
     }
-    #app { position: relative; z-index: 1; padding-bottom: 44px; }
+    #app { position: relative; z-index: 1; padding-bottom: 140px; }
+
+    /* ══ Light theme overrides ══ */
+    .theme-light .tile { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .theme-light .tile:hover {
+      box-shadow: 0 8px 28px rgba(0,0,0,0.14), 0 0 0 1px var(--accent-border);
+    }
+    .theme-light #search-form {
+      background: rgba(255,255,255,0.8);
+      border-color: rgba(0,0,0,0.12);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    .theme-light #search-form:focus-within {
+      border-color: var(--accent-border);
+      box-shadow: 0 0 0 4px var(--accent-dim), 0 2px 12px rgba(0,0,0,0.07);
+    }
+    .theme-light #ai-dock {
+      background: rgba(255,255,255,0.72);
+      border-color: rgba(0,0,0,0.1);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
+    }
+    .theme-light .dock-label {
+      background: rgba(255,255,255,0.95);
+      border-color: rgba(0,0,0,0.1);
+      color: rgba(0,0,0,0.8);
+    }
+    .theme-light #modal-box {
+      background: #ffffff;
+      border-color: rgba(0,0,0,0.1);
+    }
+    .theme-light .modal-input {
+      background: #f8f9fa;
+      border-color: rgba(0,0,0,0.12);
+      color: #111827;
+    }
+    .theme-light .modal-input:focus { border-color: var(--accent-border); }
+    .theme-light .tile-dropdown {
+      background: #ffffff;
+      border-color: rgba(0,0,0,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+    .theme-light .dd-item { color: rgba(0,0,0,0.65); }
+    .theme-light .dd-item:hover { background: rgba(0,0,0,0.04); color: #111827; }
+    .theme-light .dd-sep { background: rgba(0,0,0,0.07); }
+    .theme-light .tile-menu-btn {
+      background: rgba(255,255,255,0.8);
+      border-color: rgba(0,0,0,0.12);
+      color: rgba(0,0,0,0.5);
+    }
+    .theme-light .tile-menu-btn:hover { background: #fff; color: #111; }
+    .theme-light #theme-panel {
+      background: rgba(255,255,255,0.95);
+      border-color: rgba(0,0,0,0.1);
+    }
+    .theme-light #theme-panel-title { color: rgba(0,0,0,0.45); }
+    .theme-light .profile-btn { color: rgba(0,0,0,0.45); }
+    .theme-light .profile-btn.active { color: #000; }
+    .theme-light #profile-toggle {
+      background: rgba(0,0,0,0.06);
+      border-color: rgba(0,0,0,0.1);
+    }
+    .theme-light .section-title { color: rgba(0,0,0,0.5); }
+    .theme-light .section-badge {
+      background: rgba(0,0,0,0.06);
+      color: rgba(0,0,0,0.4);
+      border-color: rgba(0,0,0,0.1);
+    }
+    .theme-light .tile-add-placeholder {
+      border-color: rgba(0,0,0,0.12);
+      color: rgba(0,0,0,0.3);
+    }
+    .theme-light .tile-add-placeholder:hover {
+      border-color: var(--accent-border);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .theme-light body::after {
+      background-image:
+        linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+    }
 
     /* ══════════════════════════════════════════════════════
        CLOCK
     ══════════════════════════════════════════════════════ */
     #clock {
       font-family: 'DM Mono', monospace;
-      font-size: clamp(20px, 3.5vw, 30px);
+      font-size: clamp(36px, 4vw, 58px);
       font-weight: 500; letter-spacing: 0.05em; line-height: 1;
       color: var(--text-base);
     }
@@ -95,7 +188,7 @@
     /* ══════════════════════════════════════════════════════
        SEARCH
     ══════════════════════════════════════════════════════ */
-    #search-wrap { max-width: 580px; width: 100%; margin: 0 auto 32px; }
+    #search-wrap { max-width: 900px; width: 100%; margin: 0 auto 52px; }
     #search-form {
       display: flex; align-items: center;
       background: var(--surface);
@@ -110,12 +203,12 @@
     #search-input {
       flex: 1; background: transparent; border: none; outline: none;
       color: var(--text-base); font-family: 'DM Sans', sans-serif;
-      font-size: 15px; padding: 13px 10px 13px 0; direction: rtl;
+      font-size: 20px; padding: 18px 10px 18px 0; direction: rtl;
     }
     #search-input::placeholder { color: var(--text-muted); }
     #search-btn {
       background: var(--accent); border: none; cursor: pointer;
-      color: #000; padding: 8px 16px; border-radius: 40px;
+      color: #000; padding: 12px 26px; border-radius: 40px; font-size: 16px;
       display: flex; align-items: center; gap: 6px;
       font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
       flex-shrink: 0; transition: filter 0.2s !important;
@@ -141,12 +234,6 @@
       color: var(--text-muted); margin-bottom: 10px;
       display: flex; align-items: center; gap: 6px;
     }
-    #widgets-row {
-      display: grid; grid-template-columns: 200px 1fr; gap: 14px; margin-bottom: 28px;
-    }
-    @media (max-width: 600px) { #widgets-row { grid-template-columns: 1fr; } }
-
-    /* Weather */
     #weather-temp {
       font-family: 'DM Mono', monospace;
       font-size: 42px; font-weight: 500; line-height: 1; color: var(--text-base);
@@ -155,7 +242,6 @@
     #weather-desc  { font-size: 13px; color: var(--text-dim); margin-top: 3px; }
     #weather-city  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     #weather-icon-wrap { font-size: 34px; line-height: 1; }
-    #weather-loading { font-size: 12px; color: var(--text-muted); }
     #weather-error { font-size: 11px; color: rgba(255,100,100,0.7); display:none; margin-top:4px; line-height:1.4; }
     #weather-hint  { font-size: 11px; color: rgba(250,204,21,0.55); display:none; margin-top:6px; line-height:1.5; }
     .weather-row   { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
@@ -183,28 +269,243 @@
     }
     .news-item:hover .news-headline { color: var(--text-base); }
     .news-time { font-size: 10px; color: var(--text-muted); flex-shrink: 0; font-family: 'DM Mono', monospace; }
-    #news-loading { font-size: 12px; color: var(--text-muted); padding: 6px 0; }
     #news-error   { font-size: 12px; color: rgba(255,100,100,0.6); display:none; padding: 6px 0; }
     #news-refresh { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0; display: flex; align-items: center; }
     #news-refresh:hover { color: var(--accent); }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinning { animation: spin 0.8s linear infinite; }
 
+    /* ══ Profile Toggle ══ */
+    #profile-toggle {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .profile-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px; border-radius: 40px;
+      border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease !important;
+    }
+    .profile-btn.active {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+    .profile-btn:not(.active):hover {
+      color: var(--text-base);
+      background: var(--surface);
+    }
+    /* slide animation for tiles on profile switch */
+    @keyframes slideIn {
+      from { opacity:0; transform: translateY(20px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .tiles-switching .tile-wrap, .tiles-switching .tile-add-placeholder {
+      animation: slideIn 0.35s ease both;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       BOOKS (ספריות)
+    ══════════════════════════════════════════════════════ */
+    #books-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+    .book-wrap { position: relative; flex-shrink: 0; }
+    .book {
+      display: flex;
+      width: 130px;
+      height: 200px;
+      text-decoration: none;
+      cursor: pointer;
+      border-radius: 3px 10px 10px 3px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: -4px 4px 10px rgba(0,0,0,0.4), -1px 0 3px rgba(0,0,0,0.3);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .book:hover {
+      transform: translateX(6px) rotate(-1deg);
+      box-shadow: -8px 8px 20px rgba(0,0,0,0.5), -2px 0 6px rgba(0,0,0,0.3);
+    }
+    /* Book spine */
+    .book-spine {
+      width: 18px;
+      flex-shrink: 0;
+      background: rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      writing-mode: vertical-rl;
+      font-size: 9px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.1em;
+    }
+    /* Book front */
+    .book-front {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 12px;
+      gap: 8px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.07) 0%, transparent 60%);
+      position: relative;
+    }
+    .book-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: var(--book-icon-bg, rgba(255,255,255,0.12));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .book-title {
+      font-size: 13px; font-weight: 600;
+      color: var(--book-text, rgba(255,255,255,0.92));
+      line-height: 1.3;
+      word-break: break-word;
+      margin-top: auto;
+    }
+    .book-sub {
+      font-size: 10px;
+      color: var(--book-sub, rgba(255,255,255,0.38));
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    /* Add placeholder book */
+    .book-add {
+      width: 130px; height: 200px;
+      border: 2px dashed var(--border);
+      border-radius: 3px 10px 10px 3px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; cursor: pointer;
+      color: var(--text-muted); font-size: 12px;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .book-add:hover {
+      border-color: var(--accent-border);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+    /* Book 3-dot menu */
+    .book-menu-btn {
+      position: absolute; top: 6px; left: 6px; z-index: 5;
+      width: 26px; height: 26px; border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+      color: rgba(255,255,255,0.6); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+      opacity: 0; transition: opacity 0.18s !important;
+    }
+    .book-wrap:hover .book-menu-btn, .book-menu-btn.menu-open { opacity: 1; }
+    .book-menu-btn:hover { background: rgba(0,0,0,0.8); color: #fff; }
+
+    /* ══════════════════════════════════════════════════════
+       FILES (קבצים שימושיים)
+    ══════════════════════════════════════════════════════ */
+    #files-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .file-wrap { position: relative; }
+    .file {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none; cursor: pointer;
+      border-radius: 6px 14px 14px 14px;
+      border: 1px solid var(--border);
+      background: var(--file-color, var(--tile-bg));
+      padding: 20px 18px 16px;
+      min-height: 120px;
+      position: relative;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    /* Dog-ear fold on top-left corner */
+    .file::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 22px; height: 22px;
+      background: var(--app-bg);
+      clip-path: polygon(0 0, 100% 0, 100% 100%);
+      border-left: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      border-radius: 0 6px 0 0;
+    }
+    .file:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 32px rgba(0,0,0,0.35), 0 0 0 1px var(--accent-border);
+    }
+    .file-icon {
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: auto;
+    }
+    .file-title {
+      font-size: 14px; font-weight: 500;
+      color: var(--file-text, var(--text-base));
+      margin-top: 12px;
+      word-break: break-word;
+      line-height: 1.3;
+    }
+    .file-sub {
+      font-size: 11px; color: var(--file-sub, var(--text-muted));
+      margin-top: 3px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    /* File add placeholder */
+    .file-add {
+      border-radius: 6px 14px 14px 14px;
+      border: 2px dashed var(--border);
+      min-height: 120px;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 6px;
+      cursor: pointer; color: var(--text-muted); font-size: 13px;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .file-add:hover {
+      border-color: var(--accent-border);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+    /* File 3-dot menu */
+    .file-menu-btn {
+      position: absolute; top: 9px; left: 9px; z-index: 5;
+      width: 28px; height: 28px; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+      color: var(--text-dim); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+      opacity: 0; transition: opacity 0.18s !important;
+    }
+    .file-wrap:hover .file-menu-btn, .file-menu-btn.menu-open { opacity: 1; }
+    .file-menu-btn:hover { background: rgba(0,0,0,0.8); color: #fff; }
+
+    /* shared dropdown (reuse .tile-dropdown style) */
+
     /* ══════════════════════════════════════════════════════
        TILES
     ══════════════════════════════════════════════════════ */
     #tiles-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 22px;
     }
     .tile-wrap { position: relative; }
     .tile {
       border-radius: 18px; border: 1px solid var(--border);
-      background: var(--tile-color, var(--tile-default));
+      background: var(--tile-color, #1a1a2e);
       cursor: pointer; text-decoration: none;
       display: flex; flex-direction: column;
-      padding: 18px; min-height: 118px;
+      padding: 30px; min-height: 200px;
       position: relative; overflow: hidden;
     }
     .tile::after {
@@ -217,16 +518,16 @@
       box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px var(--accent-border);
     }
     .tile-icon-wrap {
-      width: 38px; height: 38px; border-radius: 11px;
-      background: rgba(255,255,255,0.1);
+      width: 64px; height: 64px; border-radius: 18px;
+      background: var(--icon-wrap-bg, rgba(255,255,255,0.1));
       display: flex; align-items: center; justify-content: center;
     }
-    .tile-name { font-size: 13px; font-weight: 500; color: var(--text-base); margin-top: auto; padding-top: 10px; opacity: 0.9; }
-    .tile-url  { font-size: 10px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tile-name { font-size: 20px; font-weight: 600; color: var(--text-color); margin-top: auto; padding-top: 16px; opacity: 0.9; }
+    .tile-url  { font-size: 13px; color: var(--text-muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .tile-menu-btn {
-      position: absolute; top: 9px; left: 9px; z-index: 5;
-      width: 27px; height: 27px; border-radius: 8px;
+      position: absolute; top: 12px; left: 12px; z-index: 5;
+      width: 36px; height: 36px; border-radius: 10px;
       border: 1px solid var(--border);
       background: rgba(0,0,0,0.45); backdrop-filter: blur(6px);
       color: var(--text-dim); cursor: pointer;
@@ -261,9 +562,9 @@
 
     .tile-add-placeholder {
       border-radius: 18px; border: 1.5px dashed var(--border);
-      min-height: 118px; display: flex; align-items: center;
-      justify-content: center; flex-direction: column; gap: 5px;
-      cursor: pointer; color: var(--text-muted); font-size: 12px;
+      min-height: 200px; display: flex; align-items: center;
+      justify-content: center; flex-direction: column; gap: 8px;
+      cursor: pointer; color: var(--text-muted); font-size: 16px;
     }
     .tile-add-placeholder:hover {
       border-color: var(--accent-border);
@@ -274,13 +575,13 @@
     /* ══════════════════════════════════════════════════════
        SECTION BAR
     ══════════════════════════════════════════════════════ */
-    .section-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26px; }
     .section-bar-left { display: flex; align-items: center; gap: 8px; }
-    .section-accent { width: 3px; height: 17px; border-radius: 2px; background: var(--accent); }
-    .section-title  { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
+    .section-accent { width: 4px; height: 26px; border-radius: 2px; background: var(--accent); }
+    .section-title  { font-size: 16px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
     .section-badge  {
       background: var(--surface); color: var(--text-muted);
-      font-size: 10px; padding: 2px 9px; border-radius: 99px; border: 1px solid var(--border);
+      font-size: 14px; padding: 3px 14px; border-radius: 99px; border: 1px solid var(--border);
     }
 
     /* ══════════════════════════════════════════════════════
@@ -291,40 +592,14 @@
     @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:.2} }
     .pulse-dot { animation: pulseDot 2.2s ease-in-out infinite; }
 
-    /* ══════════════════════════════════════════════════════
-       TICKER
-    ══════════════════════════════════════════════════════ */
-    #ticker-bar {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-      background: var(--ticker-bg); backdrop-filter: blur(10px);
-      border-top: 1px solid var(--border);
-      display: flex; align-items: center; height: 36px; overflow: hidden;
-    }
-    #ticker-label {
-      padding: 0 14px 0 10px; font-size: 10px; letter-spacing: .1em;
-      text-transform: uppercase; color: var(--accent); white-space: nowrap;
-      border-right: 1px solid var(--border); flex-shrink: 0;
-    }
-    #ticker-track { flex: 1; overflow: hidden; }
-    #ticker-inner {
-      display: flex; white-space: nowrap;
-      animation: tickerScroll 40s linear infinite;
-    }
-    #ticker-inner:hover { animation-play-state: paused; }
-    .ticker-item {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 0 28px; font-size: 12.5px; color: var(--text-dim);
-      cursor: pointer; text-decoration: none; border-right: 1px solid var(--border);
-    }
-    .ticker-item:hover { color: var(--text-base); }
-    @keyframes tickerScroll { 0%{ transform: translateX(0); } 100%{ transform: translateX(-50%); } }
+
 
     /* ══════════════════════════════════════════════════════
        THEME FAB (Floating Action Button — bottom-right)
     ══════════════════════════════════════════════════════ */
     #theme-fab {
-      position: fixed; bottom: 52px; right: 20px; z-index: 200;
-      width: 44px; height: 44px; border-radius: 50%;
+      position: fixed; bottom: 110px; right: 28px; z-index: 200;
+      width: 56px; height: 56px; border-radius: 50%;
       background: var(--accent); color: #000;
       border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
@@ -336,58 +611,58 @@
 
     /* ── Theme panel ── */
     #theme-panel {
-      position: fixed; bottom: 106px; right: 20px; z-index: 199;
-      width: 300px;
-      background: rgba(10,10,18,0.96); backdrop-filter: blur(16px);
-      border: 1px solid var(--border); border-radius: 22px;
-      padding: 20px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+      position: fixed; bottom: 178px; right: 28px; z-index: 199;
+      width: 320px;
+      background: #111118;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.8);
       display: none;
-      flex-direction: column; gap: 14px;
+      flex-direction: column; gap: 10px;
+      overflow-y: auto; max-height: 70vh;
     }
     #theme-panel.open {
       display: flex;
-      animation: panelIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+      animation: panelIn 0.2s ease both;
     }
     @keyframes panelIn {
-      from { opacity:0; transform: translateY(12px) scale(0.95); }
-      to   { opacity:1; transform: translateY(0) scale(1); }
+      from { opacity:0; transform: translateY(10px); }
+      to   { opacity:1; transform: translateY(0); }
     }
     #theme-panel-title {
       font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
-      color: var(--text-muted); display: flex; align-items: center; gap: 7px;
+      color: rgba(255,255,255,0.4);
+      display: flex; align-items: center; gap: 7px;
+      margin-bottom: 4px;
     }
-
-    /* Theme cards grid */
-    #theme-grid {
+    .theme-section-label {
+      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3); padding: 4px 0 6px;
+    }
+    .theme-row {
       display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
     }
-    .theme-card {
-      border-radius: 14px; padding: 11px 12px;
-      border: 2px solid transparent;
-      cursor: pointer; display: flex; flex-direction: column; gap: 5px;
-      position: relative; overflow: hidden;
-      transition: border-color 0.2s, transform 0.18s !important;
+    .theme-sep {
+      height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0;
     }
-    .theme-card:hover { transform: translateY(-2px); }
-    .theme-card.active { border-color: var(--accent) !important; }
-    .theme-card.active::after {
-      content: '✓';
-      position: absolute; top: 7px; left: 9px;
-      font-size: 11px; font-weight: 700; color: var(--accent);
+    .tc {
+      /* theme card */
+      border-radius: 12px; padding: 10px 11px;
+      border: 2px solid rgba(255,255,255,0.07);
+      cursor: pointer;
+      display: flex; flex-direction: column; gap: 5px;
+      background: #1a1a1a;
+      font-family: 'DM Sans', sans-serif;
+      text-align: right;
+      transition: transform 0.15s ease, border-color 0.15s ease !important;
     }
-    .theme-swatches {
-      display: flex; gap: 4px;
-    }
-    .theme-swatch {
-      width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;
-    }
-    .theme-name {
-      font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85);
-    }
-    .theme-subtitle {
-      font-size: 10px; color: rgba(255,255,255,0.38); margin-top: 1px;
-    }
+    .tc:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2) !important; }
+    .tc.tc-active { border-color: var(--accent) !important; }
+    .tc-swatches { display: flex; gap: 3px; }
+    .tc-swatch { width: 13px; height: 13px; border-radius: 3px; }
+    .tc-name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85); margin-top: 3px; }
+    .tc-sub  { font-size: 10px; color: rgba(255,255,255,0.35); }
 
     /* ══════════════════════════════════════════════════════
        MODAL
@@ -415,15 +690,15 @@
     }
     .modal-input:focus { border-color: var(--accent-border); }
     #icon-picker-dropdown {
-      position: absolute; top: calc(100% + 4px); right: 0; left: 0;
-      background: var(--bg-base); border: 1px solid var(--border);
-      border-radius: 14px; padding: 10px;
-      display: none; grid-template-columns: repeat(6,1fr);
-      gap: 6px; z-index: 10;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
-      max-height: 200px; overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 8px;
+      display: grid; grid-template-columns: repeat(7,1fr);
+      gap: 4px;
+      max-height: 180px; overflow-y: auto;
     }
-    #icon-picker-dropdown.open { display: grid; }
+    #icon-search-input:focus { border-color: var(--accent-border) !important; }
+    #icon-search-preview.valid { border-color: var(--accent-border) !important; }
     .icon-opt {
       padding: 8px; border-radius: 10px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
@@ -444,6 +719,40 @@
       border: 1px solid var(--border);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 5px;
+    }
+
+    /* Profile selector inside modal */
+    #profile-selector {
+      display: flex;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .profile-sel-btn {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s ease !important;
+    }
+    .profile-sel-btn:hover {
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text-base);
+    }
+    .profile-sel-btn.sel {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .profile-sel-btn.sel-both {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
     }
     #preview-label {
       font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 500;
@@ -467,19 +776,161 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
     @media (max-width: 480px) {
-      #tiles-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+      #tiles-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
       #theme-panel { right: 10px; left: 10px; width: auto; }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       AI DOCK
+    ══════════════════════════════════════════════════════ */
+    #ai-dock {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 180;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      background: rgba(10, 10, 20, 0.55);
+      backdrop-filter: blur(24px) saturate(1.6);
+      -webkit-backdrop-filter: blur(24px) saturate(1.6);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.45),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    }
+
+    .dock-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      position: relative;
+    }
+
+    .dock-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 0.22s ease !important;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dock-item:hover .dock-icon {
+      transform: scale(1.22) translateY(-6px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Tooltip label */
+    .dock-label {
+      position: absolute;
+      top: -34px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 10, 20, 0.9);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease !important;
+      transform: translateX(-50%) translateY(4px);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .dock-item:hover .dock-label {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Separator */
+    .dock-sep {
+      width: 1px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 1px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 600px) {
+      #ai-dock { gap: 10px; padding: 12px 18px; bottom: 16px; }
+      .dock-icon { width: 44px; height: 44px; border-radius: 14px; }
     }
   </style>
 </head>
-<body>
+<body style="background-color:#080810;">
 
-<!-- ── TICKER ── -->
-<div id="ticker-bar">
-  <span id="ticker-label">חדשות</span>
-  <div id="ticker-track">
-    <div id="ticker-inner"><span class="ticker-item" style="color:var(--text-muted);">טוען חדשות…</span></div>
-  </div>
+<!-- ── AI DOCK ── -->
+<div id="ai-dock">
+
+  <!-- ChatGPT -->
+  <a class="dock-item" href="https://chat.openai.com" target="_blank" rel="noopener noreferrer">
+    <span class="dock-label">ChatGPT</span>
+    <div class="dock-icon" style="background:#10a37f;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+      </svg>
+    </div>
+  </a>
+
+  <!-- Gemini -->
+  <a class="dock-item" href="https://gemini.google.com" target="_blank" rel="noopener noreferrer">
+    <span class="dock-label">Gemini</span>
+    <div class="dock-icon" style="background:linear-gradient(135deg,#1a73e8 0%,#7c4dff 50%,#e8175d 100%);">
+      <svg width="24" height="24" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M96 16C96 60.18 60.18 96 16 96C60.18 96 96 131.82 96 176C96 131.82 131.82 96 176 96C131.82 96 96 60.18 96 16Z" fill="white"/>
+      </svg>
+    </div>
+  </a>
+
+  <!-- Claude -->
+  <a class="dock-item" href="https://claude.ai" target="_blank" rel="noopener noreferrer">
+    <span class="dock-label">Claude</span>
+    <div class="dock-icon" style="background:#cc785c;">
+      <svg width="26" height="26" viewBox="0 0 46 46" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M32.73 6H26.3L13.27 40h6.27l3.08-8.36h13.44L39.14 40H45.4L32.73 6zm-8.18 20.24 4.9-13.3 4.89 13.3h-9.79zM13.27 6H7L0 40h6.1l1.36-7.9H17.1L18.46 40h6.11L13.27 6zm-5.3 20.57 3.8-21.88 3.8 21.88H7.97z"/>
+      </svg>
+    </div>
+  </a>
+
+  <div class="dock-sep"></div>
+
+  <!-- Microsoft Copilot -->
+  <a class="dock-item" href="https://copilot.microsoft.com" target="_blank" rel="noopener noreferrer">
+    <span class="dock-label">Copilot</span>
+    <div class="dock-icon" style="background:linear-gradient(135deg,#0f6cbd 0%,#2d7d9a 100%);">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M23.998 12c0 6.628-5.372 12-12 12S0 18.628 0 12 5.372 0 12 0s11.998 5.372 11.998 12z" fill="white" opacity=".15"/>
+        <path d="M12.5 3C8.358 3 5 6.358 5 10.5a7.48 7.48 0 0 0 1.704 4.773L5 17h4.5c.34 0 .672-.027 1-.08A5.48 5.48 0 0 0 12.5 17.5c3.038 0 5.5-2.462 5.5-5.5v-3c0-.828-.672-1.5-1.5-1.5H15v-.5C15 5.019 13.981 4 12.5 4 11.019 4 10 5.019 10 6.5v.5H8.5C7.672 7 7 7.672 7 8.5v1C7 10.881 8.119 12 9.5 12H14v1.5c0 .828-.672 1.5-1.5 1.5S11 14.328 11 13.5V13H9v.5C9 15.433 10.567 17 12.5 17S16 15.433 16 13.5V12h.5c.828 0 1.5-.672 1.5-1.5v-3c0 .828-.672 1.5-1.5 1.5H12V7.5c0-.276.224-.5.5-.5s.5.224.5.5V8h2V6.5C15 5.119 13.881 4 12.5 4z" fill="white"/>
+        <circle cx="12.5" cy="10" r="1.5" fill="#0078d4"/>
+      </svg>
+    </div>
+  </a>
+
+  <!-- Perplexity (bonus 5th) -->
+  <a class="dock-item" href="https://perplexity.ai" target="_blank" rel="noopener noreferrer">
+    <span class="dock-label">Perplexity</span>
+    <div class="dock-icon" style="background:#1c1c1e;border:1px solid rgba(255,255,255,0.15);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9.036 3.633 3.81 8.246H1v7.507h2.81l5.226 4.614V3.633zm5.928 0v16.734l5.226-4.614H23V8.246h-2.81L14.964 3.633zm-3.964 1.927v13.88l-3.572-3.154H3v-7.58H6.5l3.5-3.146zm2 0 3.5 3.146H20v7.58h-3.428L13 19.44V5.56z"/>
+      </svg>
+    </div>
+  </a>
+
 </div>
 
 <!-- ── THEME FAB ── -->
@@ -493,27 +944,41 @@
     <i data-lucide="palette" style="width:12px;height:12px;"></i>
     ערכות נושא
   </div>
-  <div id="theme-grid"></div>
+  <div id="theme-grid"><!-- filled by JS --></div>
 </div>
 
 <!-- ── APP ── -->
 <div id="app" class="min-h-screen">
-  <div style="max-width:980px;margin:0 auto;padding:28px 20px 0;">
+  <div style="max-width:1600px;margin:0 auto;padding:52px 48px 0;">
 
     <!-- HEADER -->
-    <header class="flex items-start justify-between mb-10 fade-up">
+    <header class="flex items-start justify-between mb-16 fade-up">
       <div>
         <div class="flex items-center gap-2 mb-1">
           <span class="pulse-dot" style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
-          <span id="greeting-sub" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);">ברוך הבא</span>
+          <span id="greeting-sub" style="font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);">ברוך הבא</span>
         </div>
-        <h1 style="font-size:clamp(19px,3.2vw,27px);font-weight:600;letter-spacing:-0.02em;color:var(--text-base);">
-          <span id="greeting-text">שלום</span>, <span style="color:var(--accent);">ערן</span> ✦
+        <h1 style="font-size:clamp(36px,4vw,56px);font-weight:700;letter-spacing:-0.03em;color:var(--text-base);">
+          <span id="greeting-text">שלום</span>, <span id="user-name" style="color:var(--accent);cursor:pointer;border-bottom:1px dashed transparent;transition:border-color 0.2s;" title="לחץ לעריכת השם" onclick="editUserName()">ערן</span> ✦
         </h1>
       </div>
+
+      <!-- Profile Toggle — center -->
+      <div id="profile-toggle">
+        <button id="btn-home" class="profile-btn active" onclick="switchProfile('home')">
+          <i data-lucide="home" style="width:18px;height:18px;"></i>
+          בית
+        </button>
+        <button id="btn-work" class="profile-btn" onclick="switchProfile('work')">
+          <i data-lucide="briefcase" style="width:18px;height:18px;"></i>
+          עבודה
+        </button>
+      </div>
+
+      <!-- Clock — right -->
       <div style="text-align:left;">
         <div id="clock">00:00:00</div>
-        <div id="date-display" style="font-size:11px;letter-spacing:.08em;color:var(--text-muted);margin-top:5px;"></div>
+        <div id="date-display" style="font-size:18px;letter-spacing:.06em;color:var(--text-muted);margin-top:8px;"></div>
       </div>
     </header>
 
@@ -528,65 +993,52 @@
       </form>
     </div>
 
-    <!-- WIDGETS -->
-    <div id="widgets-row" class="fade-up" style="animation-delay:.14s;">
-      <!-- Weather -->
-      <div class="widget-card" id="weather-card">
-        <div class="widget-label">
-          <i data-lucide="cloud-sun" style="width:12px;height:12px;"></i>מזג אוויר
-        </div>
-        <div id="weather-loading">טוען…</div>
-        <div id="weather-content" style="display:none;">
-          <div class="weather-row">
-            <div>
-              <div><span id="weather-temp">--</span><span id="weather-unit">°C</span></div>
-              <div id="weather-desc"></div>
-              <div id="weather-city"></div>
-            </div>
-            <div id="weather-icon-wrap"></div>
-          </div>
-          <div class="weather-extra">
-            <div class="weather-pill"><i data-lucide="thermometer" style="width:11px;height:11px;"></i><span>מרגיש <span id="weather-feels">--</span>°</span></div>
-            <div class="weather-pill"><i data-lucide="droplets" style="width:11px;height:11px;"></i><span>לחות <span id="weather-humidity">--</span>%</span></div>
-            <div class="weather-pill"><i data-lucide="wind" style="width:11px;height:11px;"></i><span>רוח <span id="weather-wind">--</span></span></div>
-            <div class="weather-pill"><i data-lucide="eye" style="width:11px;height:11px;"></i><span><span id="weather-sky">--</span></span></div>
-          </div>
-        </div>
-        <div id="weather-error"></div>
-        <div id="weather-hint">הכנס API Key של <a href="https://openweathermap.org/api" target="_blank" style="color:var(--accent);text-decoration:underline;">OpenWeatherMap</a> בקוד.</div>
-      </div>
-      <!-- News -->
-      <div class="widget-card">
-        <div class="widget-label" style="justify-content:space-between;">
-          <span style="display:flex;align-items:center;gap:6px;">
-            <i data-lucide="newspaper" style="width:12px;height:12px;"></i>חדשות — Ynet
-          </span>
-          <button id="news-refresh" onclick="fetchNews()" title="רענן">
-            <i id="news-refresh-icon" data-lucide="refresh-cw" style="width:13px;height:13px;"></i>
-          </button>
-        </div>
-        <div id="news-loading">טוען חדשות…</div>
-        <div id="news-error">שגיאה בטעינת חדשות.</div>
-        <div id="news-list"></div>
-      </div>
-    </div>
+
 
     <!-- TILES -->
     <div class="section-bar fade-up" style="animation-delay:.2s;">
       <div class="section-bar-left">
         <div class="section-accent"></div>
-        <span class="section-title">קישורים מהירים</span>
+        <span id="section-title" class="section-title">קישורים מהירים — בית</span>
         <span id="tile-count" class="section-badge">0</span>
       </div>
       <button onclick="openModal(null)" class="btn btn-ghost"
-        style="border-color:var(--accent-border);color:var(--accent);background:var(--accent-dim);">
-        <i data-lucide="plus" style="width:13px;height:13px;"></i>הוסף אריח
+        style="border-color:var(--accent-border);color:var(--accent);background:var(--accent-dim);font-size:16px;padding:12px 24px;">
+        <i data-lucide="plus" style="width:18px;height:18px;"></i>הוסף אריח
       </button>
     </div>
     <div id="tiles-grid" class="fade-up" style="animation-delay:.26s;"></div>
 
-    <div class="mt-14 text-center fade-up" style="animation-delay:.34s;color:var(--text-muted);font-size:11px;letter-spacing:.1em;opacity:0.4;">
-      ✦ הדשבורד האישי של ערן ✦
+    <!-- BOOKS — ספריות -->
+    <div class="section-bar fade-up" style="animation-delay:.32s;margin-top:52px;">
+      <div class="section-bar-left">
+        <div class="section-accent"></div>
+        <span class="section-title">ספריות</span>
+        <span id="book-count" class="section-badge">0</span>
+      </div>
+      <button onclick="openItemModal('book',null)" class="btn btn-ghost"
+        style="border-color:var(--accent-border);color:var(--accent);background:var(--accent-dim);font-size:16px;padding:12px 24px;">
+        <i data-lucide="plus" style="width:18px;height:18px;"></i>הוסף ספרייה
+      </button>
+    </div>
+    <div id="books-grid" class="fade-up" style="animation-delay:.36s;"></div>
+
+    <!-- FILES — קבצים שימושיים -->
+    <div class="section-bar fade-up" style="animation-delay:.4s;margin-top:52px;">
+      <div class="section-bar-left">
+        <div class="section-accent"></div>
+        <span class="section-title">קבצים שימושיים</span>
+        <span id="file-count" class="section-badge">0</span>
+      </div>
+      <button onclick="openItemModal('file',null)" class="btn btn-ghost"
+        style="border-color:var(--accent-border);color:var(--accent);background:var(--accent-dim);font-size:16px;padding:12px 24px;">
+        <i data-lucide="plus" style="width:18px;height:18px;"></i>הוסף קובץ
+      </button>
+    </div>
+    <div id="files-grid" class="fade-up" style="animation-delay:.44s;"></div>
+
+    <div class="mt-14 text-center fade-up" style="animation-delay:.5s;color:var(--text-muted);font-size:11px;letter-spacing:.1em;opacity:0.4;">
+      ✦ הדשבורד האישי של <span id="footer-name">ערן</span> ✦
     </div>
   </div>
 </div>
@@ -616,20 +1068,53 @@
         <input id="f-url" type="url" class="modal-input" placeholder="https://..." dir="ltr" />
       </div>
       <div>
-        <label class="modal-label">אייקון</label>
-        <div style="position:relative;">
-          <button id="icon-trigger" onclick="toggleIconPicker()" class="modal-input flex items-center justify-between" style="cursor:pointer;">
-            <span class="flex items-center gap-2" style="color:var(--text-base);">
-              <i id="icon-trigger-icon" data-lucide="globe" style="width:14px;height:14px;"></i>
-              <span id="icon-trigger-label">globe</span>
-            </span>
-            <i data-lucide="chevron-down" style="width:13px;height:13px;color:var(--text-muted);"></i>
-          </button>
-          <div id="icon-picker-dropdown"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label class="modal-label" style="margin-bottom:0;">אייקון</label>
+          <a href="https://lucide.dev/icons/" target="_blank" rel="noopener noreferrer"
+            style="font-size:10px;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:4px;opacity:0.7;transition:opacity 0.2s;"
+            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+            <i data-lucide="external-link" style="width:10px;height:10px;"></i>
+            כל האייקונים ← lucide.dev
+          </a>
         </div>
+        <!-- Search row: free-text + live preview -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="position:relative;flex:1;">
+            <i data-lucide="search" style="width:13px;height:13px;position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+            <input id="icon-search-input" type="text" class="modal-input"
+              placeholder="חיפוש חופשי… (לדוג׳: shield)"
+              dir="ltr"
+              style="padding-right:32px;font-size:13px;"
+              oninput="onIconSearch(this.value)"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();applyIconFromSearch();}" />
+          </div>
+          <!-- Live preview of currently typed icon name -->
+          <div id="icon-search-preview"
+            style="width:38px;height:38px;border-radius:10px;flex-shrink:0;
+                   background:var(--surface);border:1px solid var(--border);
+                   display:flex;align-items:center;justify-content:center;
+                   transition:border-color 0.2s;">
+            <i id="icon-search-preview-icon" data-lucide="globe"
+               style="width:18px;height:18px;color:var(--text-dim);"></i>
+          </div>
+        </div>
+        <!-- Status line -->
+        <div id="icon-search-status"
+          style="font-size:11px;color:var(--text-muted);margin-bottom:8px;min-height:15px;"></div>
+        <!-- Popular icons grid (always visible, filtered by search) -->
+        <div id="icon-picker-dropdown"></div>
       </div>
       <div>
         <label class="modal-label">צבע רקע</label>
+        <!-- "Use theme color" pill -->
+        <button id="btn-use-theme-color" onclick="selectColor('')"
+          style="display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;
+                 padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;
+                 background:var(--accent-dim);border:1px solid var(--accent-border);
+                 color:var(--accent);font-family:'DM Sans',sans-serif;">
+          <i data-lucide="palette" style="width:12px;height:12px;"></i>
+          השתמש בצבע ה-Theme
+        </button>
         <div id="color-swatches" class="flex flex-wrap gap-2 mb-2"></div>
         <div class="flex items-center gap-2">
           <label style="font-size:12px;color:var(--text-muted);">צבע מותאם:</label>
@@ -639,9 +1124,74 @@
         </div>
       </div>
     </div>
-    <div class="flex gap-3 mt-6">
+    <!-- Profile selector — shown only when adding new tile -->
+    <div id="profile-selector-wrap" style="display:none;margin-top:18px;">
+      <label class="modal-label" style="margin-bottom:8px;">הוסף לפרופיל</label>
+      <div id="profile-selector">
+        <button id="psel-current" class="profile-sel-btn sel" onclick="setProfileSel('current')">
+          <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+          <span id="psel-current-label">פרופיל נוכחי</span>
+        </button>
+        <button id="psel-both" class="profile-sel-btn" onclick="setProfileSel('both')">
+          <i data-lucide="copy" style="width:14px;height:14px;"></i>
+          שני הפרופילים
+        </button>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-5">
       <button onclick="closeModal()" class="btn btn-ghost" style="flex:1;">ביטול</button>
       <button onclick="saveTile()"   class="btn btn-gold"  style="flex:1;">
+        <i data-lucide="check" style="width:14px;height:14px;"></i>שמור
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ITEM MODAL (books & files) ── -->
+<div id="item-modal-overlay" onclick="if(event.target===this)closeItemModal()" style="
+  position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);
+  z-index:101;display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--bg-base);border:1px solid var(--border);border-radius:24px;
+              width:100%;max-width:400px;padding:28px;box-shadow:0 32px 80px rgba(0,0,0,0.6);">
+    <div class="flex items-center justify-between mb-6">
+      <h2 id="item-modal-title" style="font-size:17px;font-weight:600;color:var(--text-base);"></h2>
+      <button onclick="closeItemModal()" class="btn btn-ghost" style="width:34px;height:34px;padding:0;border-radius:10px;">
+        <i data-lucide="x" style="width:15px;height:15px;"></i>
+      </button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label class="modal-label">שם</label>
+        <input id="item-f-name" type="text" class="modal-input" placeholder="שם הספרייה / הקובץ" dir="rtl" />
+      </div>
+      <div>
+        <label class="modal-label">נתיב / כתובת URL</label>
+        <input id="item-f-url" type="text" class="modal-input" dir="ltr"
+          placeholder="C:\Users\... או file:///... או https://..." />
+      </div>
+      <div id="item-color-row">
+        <label class="modal-label">צבע</label>
+        <div id="item-color-swatches" class="flex flex-wrap gap-2"></div>
+      </div>
+    </div>
+    <!-- Profile selector for new items -->
+    <div id="item-profile-selector-wrap" style="display:none;margin-top:16px;">
+      <label class="modal-label" style="margin-bottom:8px;">הוסף לפרופיל</label>
+      <div id="item-profile-selector" style="display:flex;gap:8px;">
+        <button id="ipsel-current" class="profile-sel-btn sel" style="flex:1;">
+          <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+          <span id="ipsel-current-label">פרופיל נוכחי</span>
+        </button>
+        <button id="ipsel-both" class="profile-sel-btn" style="flex:1;">
+          <i data-lucide="copy" style="width:14px;height:14px;"></i>
+          שני הפרופילים
+        </button>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-5">
+      <button onclick="closeItemModal()" class="btn btn-ghost" style="flex:1;">ביטול</button>
+      <button onclick="saveItem()" class="btn btn-gold" style="flex:1;">
         <i data-lucide="check" style="width:14px;height:14px;"></i>שמור
       </button>
     </div>
@@ -652,11 +1202,7 @@
      SCRIPT
 ══════════════════════════════════════════════════════ -->
 <script>
-/* ════════════════════════════════════════════════════
-   CONFIG
-════════════════════════════════════════════════════ */
-const WEATHER_API_KEY = 'YOUR_API_KEY';
-const WEATHER_CITY    = 'Tel Aviv';
+/* ════ CONFIG ════ */
 
 /* ════════════════════════════════════════════════════
    THEMES — 10 פלטות
@@ -665,126 +1211,248 @@ const WEATHER_CITY    = 'Tel Aviv';
 const THEMES = [
   {
     id: 'midnight', name: 'Midnight', subtitle: 'ברירת מחדל',
-    swatches: ['#080810','#1a1040','#facc15','#1a1a2e'],
+    swatches: ["#080810", "#1a1040", "#facc15", "#1a1a2e"],
     vars: {
-      '--accent':'#facc15','--accent-dim':'rgba(250,204,21,0.13)','--accent-border':'rgba(250,204,21,0.28)',
-      '--bg-base':'#080810','--bg-grad-a':'#1a1040','--bg-grad-b':'#0f2040',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#080810',
+      '--bg-grad-a':'#1a1040',
+      '--bg-grad-b':'#0f2040',
+      '--tile-bg':'#1a1a2e',
+      '--accent':'#facc15',
+      '--accent-dim':'rgba(250,204,21,0.13)',
+      '--accent-border':'rgba(250,204,21,0.28)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(255,255,255,0.08)',
-      '--text-base':'#ffffff','--text-dim':'rgba(255,255,255,0.55)','--text-muted':'rgba(255,255,255,0.35)',
-      '--tile-default':'#1a1a2e','--ticker-bg':'rgba(8,8,16,0.92)','--grid-opacity':'0.017',
+      '--text-color':'#ffffff',
+      '--text-dim':'rgba(255,255,255,0.55)',
+      '--text-muted':'rgba(255,255,255,0.35)',
+      '--grid-opacity':'0.017',
     }
   },
   {
     id: 'forest', name: 'Forest', subtitle: 'ירוק עמוק',
-    swatches: ['#071210','#0d2b1f','#4ade80','#122a1e'],
+    swatches: ["#071210", "#0d2b1f", "#4ade80", "#122a1e"],
     vars: {
-      '--accent':'#4ade80','--accent-dim':'rgba(74,222,128,0.12)','--accent-border':'rgba(74,222,128,0.3)',
-      '--bg-base':'#071210','--bg-grad-a':'#0d2b1f','--bg-grad-b':'#061a10',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#071210',
+      '--bg-grad-a':'#0d2b1f',
+      '--bg-grad-b':'#061a10',
+      '--tile-bg':'#122a1e',
+      '--accent':'#4ade80',
+      '--accent-dim':'rgba(74,222,128,0.12)',
+      '--accent-border':'rgba(74,222,128,0.3)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(255,255,255,0.08)',
-      '--text-base':'#efffee','--text-dim':'rgba(220,255,220,0.55)','--text-muted':'rgba(200,240,200,0.35)',
-      '--tile-default':'#122a1e','--ticker-bg':'rgba(7,18,16,0.92)','--grid-opacity':'0.015',
+      '--text-color':'#efffee',
+      '--text-dim':'rgba(220,255,220,0.55)',
+      '--text-muted':'rgba(200,240,200,0.35)',
+      '--grid-opacity':'0.015',
     }
   },
   {
     id: 'cyberpunk', name: 'Cyberpunk', subtitle: 'ניאון עתידני',
-    swatches: ['#060610','#0a0020','#f0abfc','#1a003a'],
+    swatches: ["#060610", "#0a0020", "#f0abfc", "#1a003a"],
     vars: {
-      '--accent':'#f0abfc','--accent-dim':'rgba(240,171,252,0.12)','--accent-border':'rgba(240,171,252,0.3)',
-      '--bg-base':'#060610','--bg-grad-a':'#0a0020','--bg-grad-b':'#001a30',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#060610',
+      '--bg-grad-a':'#0a0020',
+      '--bg-grad-b':'#001a30',
+      '--tile-bg':'#1a003a',
+      '--accent':'#f0abfc',
+      '--accent-dim':'rgba(240,171,252,0.12)',
+      '--accent-border':'rgba(240,171,252,0.3)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(240,171,252,0.1)',
-      '--text-base':'#fdf4ff','--text-dim':'rgba(253,244,255,0.55)','--text-muted':'rgba(240,171,252,0.4)',
-      '--tile-default':'#1a003a','--ticker-bg':'rgba(6,6,16,0.94)','--grid-opacity':'0.02',
+      '--text-color':'#fdf4ff',
+      '--text-dim':'rgba(253,244,255,0.55)',
+      '--text-muted':'rgba(240,171,252,0.4)',
+      '--grid-opacity':'0.02',
     }
   },
   {
     id: 'nordic', name: 'Nordic', subtitle: 'קר ונקי',
-    swatches: ['#1a1f2e','#2e3444','#88c0d0','#252c3c'],
+    swatches: ["#1a1f2e", "#2e3444", "#88c0d0", "#252c3c"],
     vars: {
-      '--accent':'#88c0d0','--accent-dim':'rgba(136,192,208,0.12)','--accent-border':'rgba(136,192,208,0.28)',
-      '--bg-base':'#1a1f2e','--bg-grad-a':'#1f2638','--bg-grad-b':'#141824',
-      '--surface':'rgba(255,255,255,0.05)','--surface-card':'rgba(255,255,255,0.04)',
+      '--app-bg':'#1a1f2e',
+      '--bg-grad-a':'#1f2638',
+      '--bg-grad-b':'#141824',
+      '--tile-bg':'#252c3c',
+      '--accent':'#88c0d0',
+      '--accent-dim':'rgba(136,192,208,0.12)',
+      '--accent-border':'rgba(136,192,208,0.28)',
+      '--surface':'rgba(255,255,255,0.05)',
       '--border':'rgba(255,255,255,0.09)',
-      '--text-base':'#eceff4','--text-dim':'rgba(236,239,244,0.6)','--text-muted':'rgba(216,222,233,0.4)',
-      '--tile-default':'#252c3c','--ticker-bg':'rgba(20,24,36,0.95)','--grid-opacity':'0.02',
+      '--text-color':'#eceff4',
+      '--text-dim':'rgba(236,239,244,0.6)',
+      '--text-muted':'rgba(216,222,233,0.4)',
+      '--grid-opacity':'0.02',
     }
   },
   {
     id: 'sunrise', name: 'Sunrise', subtitle: 'אדום-כתום',
-    swatches: ['#100808','#2a0f0a','#fb923c','#2a1008'],
+    swatches: ["#100808", "#2a0f0a", "#fb923c", "#2a1008"],
     vars: {
-      '--accent':'#fb923c','--accent-dim':'rgba(251,146,60,0.12)','--accent-border':'rgba(251,146,60,0.28)',
-      '--bg-base':'#100808','--bg-grad-a':'#2a0f0a','--bg-grad-b':'#200800',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#100808',
+      '--bg-grad-a':'#2a0f0a',
+      '--bg-grad-b':'#200800',
+      '--tile-bg':'#2a1008',
+      '--accent':'#fb923c',
+      '--accent-dim':'rgba(251,146,60,0.12)',
+      '--accent-border':'rgba(251,146,60,0.28)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(255,255,255,0.08)',
-      '--text-base':'#fff8f5','--text-dim':'rgba(255,240,230,0.55)','--text-muted':'rgba(255,220,200,0.38)',
-      '--tile-default':'#2a1008','--ticker-bg':'rgba(16,8,8,0.93)','--grid-opacity':'0.016',
+      '--text-color':'#fff8f5',
+      '--text-dim':'rgba(255,240,230,0.55)',
+      '--text-muted':'rgba(255,220,200,0.38)',
+      '--grid-opacity':'0.016',
     }
   },
   {
     id: 'ocean', name: 'Ocean', subtitle: 'כחול עמוק',
-    swatches: ['#060d1a','#0a1f3c','#38bdf8','#0d2240'],
+    swatches: ["#060d1a", "#0a1f3c", "#38bdf8", "#0d2240"],
     vars: {
-      '--accent':'#38bdf8','--accent-dim':'rgba(56,189,248,0.12)','--accent-border':'rgba(56,189,248,0.28)',
-      '--bg-base':'#060d1a','--bg-grad-a':'#0a1f3c','--bg-grad-b':'#041020',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#060d1a',
+      '--bg-grad-a':'#0a1f3c',
+      '--bg-grad-b':'#041020',
+      '--tile-bg':'#0d2240',
+      '--accent':'#38bdf8',
+      '--accent-dim':'rgba(56,189,248,0.12)',
+      '--accent-border':'rgba(56,189,248,0.28)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(255,255,255,0.08)',
-      '--text-base':'#f0f9ff','--text-dim':'rgba(240,249,255,0.58)','--text-muted':'rgba(186,230,253,0.4)',
-      '--tile-default':'#0d2240','--ticker-bg':'rgba(6,13,26,0.94)','--grid-opacity':'0.018',
+      '--text-color':'#f0f9ff',
+      '--text-dim':'rgba(240,249,255,0.58)',
+      '--text-muted':'rgba(186,230,253,0.4)',
+      '--grid-opacity':'0.018',
     }
   },
   {
     id: 'rose', name: 'Rose Gold', subtitle: 'ורדרד אלגנטי',
-    swatches: ['#140a0d','#2a1018','#fda4af','#240d14'],
+    swatches: ["#140a0d", "#2a1018", "#fda4af", "#240d14"],
     vars: {
-      '--accent':'#fda4af','--accent-dim':'rgba(253,164,175,0.12)','--accent-border':'rgba(253,164,175,0.28)',
-      '--bg-base':'#140a0d','--bg-grad-a':'#2a1018','--bg-grad-b':'#1a0810',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#140a0d',
+      '--bg-grad-a':'#2a1018',
+      '--bg-grad-b':'#1a0810',
+      '--tile-bg':'#240d14',
+      '--accent':'#fda4af',
+      '--accent-dim':'rgba(253,164,175,0.12)',
+      '--accent-border':'rgba(253,164,175,0.28)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(255,255,255,0.08)',
-      '--text-base':'#fff1f3','--text-dim':'rgba(255,241,243,0.55)','--text-muted':'rgba(253,164,175,0.45)',
-      '--tile-default':'#240d14','--ticker-bg':'rgba(20,10,13,0.94)','--grid-opacity':'0.016',
+      '--text-color':'#fff1f3',
+      '--text-dim':'rgba(255,241,243,0.55)',
+      '--text-muted':'rgba(253,164,175,0.45)',
+      '--grid-opacity':'0.016',
     }
   },
   {
     id: 'sand', name: 'Sand', subtitle: 'בז׳ חם',
-    swatches: ['#1a1610','#2c2418','#fbbf24','#26200e'],
+    swatches: ["#1a1610", "#2c2418", "#fbbf24", "#26200e"],
     vars: {
-      '--accent':'#fbbf24','--accent-dim':'rgba(251,191,36,0.12)','--accent-border':'rgba(251,191,36,0.28)',
-      '--bg-base':'#1a1610','--bg-grad-a':'#2c2418','--bg-grad-b':'#201a0c',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#1a1610',
+      '--bg-grad-a':'#2c2418',
+      '--bg-grad-b':'#201a0c',
+      '--tile-bg':'#26200e',
+      '--accent':'#fbbf24',
+      '--accent-dim':'rgba(251,191,36,0.12)',
+      '--accent-border':'rgba(251,191,36,0.28)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(255,255,255,0.08)',
-      '--text-base':'#fefce8','--text-dim':'rgba(254,252,232,0.58)','--text-muted':'rgba(251,191,36,0.42)',
-      '--tile-default':'#26200e','--ticker-bg':'rgba(26,22,16,0.94)','--grid-opacity':'0.016',
+      '--text-color':'#fefce8',
+      '--text-dim':'rgba(254,252,232,0.58)',
+      '--text-muted':'rgba(251,191,36,0.42)',
+      '--grid-opacity':'0.016',
     }
   },
   {
     id: 'mono', name: 'Mono', subtitle: 'שחור-לבן',
-    swatches: ['#0a0a0a','#141414','#e5e5e5','#1c1c1c'],
+    swatches: ["#0a0a0a", "#141414", "#e5e5e5", "#1c1c1c"],
     vars: {
-      '--accent':'#e5e5e5','--accent-dim':'rgba(229,229,229,0.1)','--accent-border':'rgba(229,229,229,0.25)',
-      '--bg-base':'#0a0a0a','--bg-grad-a':'#141414','--bg-grad-b':'#0f0f0f',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#0a0a0a',
+      '--bg-grad-a':'#141414',
+      '--bg-grad-b':'#0f0f0f',
+      '--tile-bg':'#1c1c1c',
+      '--accent':'#e5e5e5',
+      '--accent-dim':'rgba(229,229,229,0.1)',
+      '--accent-border':'rgba(229,229,229,0.25)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(255,255,255,0.08)',
-      '--text-base':'#f5f5f5','--text-dim':'rgba(245,245,245,0.55)','--text-muted':'rgba(245,245,245,0.35)',
-      '--tile-default':'#1c1c1c','--ticker-bg':'rgba(10,10,10,0.94)','--grid-opacity':'0.014',
+      '--text-color':'#f5f5f5',
+      '--text-dim':'rgba(245,245,245,0.55)',
+      '--text-muted':'rgba(245,245,245,0.35)',
+      '--grid-opacity':'0.014',
     }
   },
   {
     id: 'aurora', name: 'Aurora', subtitle: 'ירוק-כחול זוהר',
-    swatches: ['#060f12','#0a2020','#34d399','#0d2a22'],
+    swatches: ["#060f12", "#0a2020", "#34d399", "#0d2a22"],
     vars: {
-      '--accent':'#34d399','--accent-dim':'rgba(52,211,153,0.12)','--accent-border':'rgba(52,211,153,0.28)',
-      '--bg-base':'#060f12','--bg-grad-a':'#0a2020','--bg-grad-b':'#061428',
-      '--surface':'rgba(255,255,255,0.04)','--surface-card':'rgba(255,255,255,0.03)',
+      '--app-bg':'#060f12',
+      '--bg-grad-a':'#0a2020',
+      '--bg-grad-b':'#061428',
+      '--tile-bg':'#0d2a22',
+      '--accent':'#34d399',
+      '--accent-dim':'rgba(52,211,153,0.12)',
+      '--accent-border':'rgba(52,211,153,0.28)',
+      '--surface':'rgba(255,255,255,0.04)',
       '--border':'rgba(255,255,255,0.08)',
-      '--text-base':'#ecfdf5','--text-dim':'rgba(236,253,245,0.55)','--text-muted':'rgba(110,231,183,0.42)',
-      '--tile-default':'#0d2a22','--ticker-bg':'rgba(6,15,18,0.94)','--grid-opacity':'0.016',
+      '--text-color':'#ecfdf5',
+      '--text-dim':'rgba(236,253,245,0.55)',
+      '--text-muted':'rgba(110,231,183,0.42)',
+      '--grid-opacity':'0.016',
     }
-  },
-];
+  },{
+    id: "light", name: "☀️ Light", subtitle: "לבן נקי",
+    swatches: ["#f0f2f5","#dde8ff","#2563eb","#ffffff"],
+    vars: {
+      "--app-bg":"#f0f2f5","--bg-grad-a":"#dde8ff","--bg-grad-b":"#e8f0fe",
+      "--tile-bg":"#ffffff","--accent":"#2563eb",
+      "--accent-dim":"rgba(37,99,235,0.1)","--accent-border":"rgba(37,99,235,0.3)",
+      "--surface":"rgba(0,0,0,0.04)","--border":"rgba(0,0,0,0.1)",
+      "--text-color":"#111827","--text-dim":"rgba(17,24,39,0.6)","--text-muted":"rgba(17,24,39,0.38)",
+      "--grid-opacity":"0.06",
+      "--icon-color":"rgba(0,0,0,0.75)",
+      "--icon-wrap-bg":"rgba(0,0,0,0.08)",
+    }
+  },{
+    id: "paper", name: "📄 Paper", subtitle: "בז׳ חמים",
+    swatches: ["#faf7f2","#fdecd0","#b45309","#fffbf5"],
+    vars: {
+      "--app-bg":"#faf7f2","--bg-grad-a":"#fdecd0","--bg-grad-b":"#fde8c8",
+      "--tile-bg":"#fffbf5","--accent":"#b45309",
+      "--accent-dim":"rgba(180,83,9,0.1)","--accent-border":"rgba(180,83,9,0.3)",
+      "--surface":"rgba(0,0,0,0.04)","--border":"rgba(0,0,0,0.09)",
+      "--text-color":"#1c1008","--text-dim":"rgba(28,16,8,0.6)","--text-muted":"rgba(28,16,8,0.38)",
+      "--grid-opacity":"0.05",
+      "--icon-color":"rgba(0,0,0,0.75)",
+      "--icon-wrap-bg":"rgba(0,0,0,0.08)",
+    }
+  },{
+    id: "slate", name: "🌫️ Slate", subtitle: "אפור עדין",
+    swatches: ["#f1f5f9","#e0f2fe","#0f766e","#f8fafc"],
+    vars: {
+      "--app-bg":"#f1f5f9","--bg-grad-a":"#e0f2fe","--bg-grad-b":"#ccfbf1",
+      "--tile-bg":"#f8fafc","--accent":"#0f766e",
+      "--accent-dim":"rgba(15,118,110,0.1)","--accent-border":"rgba(15,118,110,0.3)",
+      "--surface":"rgba(0,0,0,0.04)","--border":"rgba(0,0,0,0.09)",
+      "--text-color":"#0f172a","--text-dim":"rgba(15,23,42,0.6)","--text-muted":"rgba(15,23,42,0.38)",
+      "--grid-opacity":"0.06",
+      "--icon-color":"rgba(0,0,0,0.75)",
+      "--icon-wrap-bg":"rgba(0,0,0,0.08)",
+    }
+  },{
+    id: "lavender", name: "💜 Lavender", subtitle: "סגול עדין",
+    swatches: ["#f5f3ff","#ede9fe","#7c3aed","#faf5ff"],
+    vars: {
+      "--app-bg":"#f5f3ff","--bg-grad-a":"#ede9fe","--bg-grad-b":"#fce7f3",
+      "--tile-bg":"#faf5ff","--accent":"#7c3aed",
+      "--accent-dim":"rgba(124,58,237,0.1)","--accent-border":"rgba(124,58,237,0.3)",
+      "--surface":"rgba(0,0,0,0.04)","--border":"rgba(0,0,0,0.09)",
+      "--text-color":"#1e1b4b","--text-dim":"rgba(30,27,75,0.6)","--text-muted":"rgba(30,27,75,0.38)",
+      "--grid-opacity":"0.05",
+      "--icon-color":"rgba(0,0,0,0.75)",
+      "--icon-wrap-bg":"rgba(0,0,0,0.08)",
+    }
+  }
 
+];
 /* ════════════════════════════════════════════════════
    CONSTANTS
 ════════════════════════════════════════════════════ */
@@ -806,35 +1474,75 @@ const COLOR_PRESETS = [
   '#3b1f0a','#0a2a1a','#1a0a3a','#212529',
 ];
 
-const DEFAULT_TILES = [
-  { id:1, name:'Gmail',       url:'https://mail.google.com', icon:'mail',    color:'#1a3a4a' },
-  { id:2, name:'GitHub',      url:'https://github.com',      icon:'github',  color:'#1b1f23' },
-  { id:3, name:'YouTube',     url:'https://youtube.com',     icon:'youtube', color:'#3d0000' },
-  { id:4, name:'LinkedIn',    url:'https://linkedin.com',    icon:'linkedin',color:'#003049' },
-  { id:5, name:'Twitter / X', url:'https://x.com',           icon:'twitter', color:'#0f3460' },
-  { id:6, name:'Google',      url:'https://google.com',      icon:'globe',   color:'#2d6a4f' },
+// Rotating palette for tiles with no user-chosen color
+const TILE_DEFAULTS = [
+  '#1a3a4a','#2d6a4f','#3d0000','#0f3460',
+  '#4a1942','#1b4332','#370617','#2c3e50',
+  '#003049','#1a1a2e','#16213e','#1b1f23',
+];
+const TILE_DEFAULTS_LIGHT = [
+  '#dbeafe','#dcfce7','#fef9c3','#fce7f3',
+  '#e0f2fe','#ede9fe','#fff7ed','#f0fdf4',
+  '#fdf2f8','#ecfeff','#f5f3ff','#fefce8',
 ];
 
-const WX_ICONS = {
-  '01d':'☀️','01n':'🌙','02d':'⛅','02n':'⛅','03d':'☁️','03n':'☁️',
-  '04d':'☁️','04n':'☁️','09d':'🌧️','09n':'🌧️','10d':'🌦️','10n':'🌧️',
-  '11d':'⛈️','11n':'⛈️','13d':'❄️','13n':'❄️','50d':'🌫️','50n':'🌫️',
-};
+function tileDefaultColor(index) {
+  if (LIGHT_THEMES && LIGHT_THEMES.has(activeThemeId)) {
+    return TILE_DEFAULTS_LIGHT[index % TILE_DEFAULTS_LIGHT.length];
+  }
+  return TILE_DEFAULTS[index % TILE_DEFAULTS.length];
+}
+
+const DEFAULT_TILES = [
+  { id:1, name:'Gmail',       url:'https://mail.google.com', icon:'mail',    color:'' },
+  { id:2, name:'GitHub',      url:'https://github.com',      icon:'github',  color:'' },
+  { id:3, name:'YouTube',     url:'https://youtube.com',     icon:'youtube', color:'' },
+  { id:4, name:'LinkedIn',    url:'https://linkedin.com',    icon:'linkedin',color:'' },
+  { id:5, name:'Twitter / X', url:'https://x.com',           icon:'twitter', color:'' },
+  { id:6, name:'Google',      url:'https://google.com',      icon:'globe',   color:'' },
+];
+
+
 
 /* ════════════════════════════════════════════════════
    STATE
 ════════════════════════════════════════════════════ */
-let tiles         = [];
-let editingId     = null;
-let selectedIcon  = 'globe';
-let selectedColor = '#1a1a2e';
-let openMenuId    = null;
-let activeThemeId = 'midnight';
+let tiles          = [];
+let editingId      = null;
+let selectedIcon   = 'globe';
+let selectedColor  = '';
+let openMenuId     = null;
+let activeThemeId  = 'midnight';
 let themePanelOpen = false;
+let activeProfile  = 'home';   // 'home' | 'work'
+let profileSel     = 'current'; // 'current' | 'both'
+
+// Default theme per profile (can be overridden by user)
+const PROFILE_DEFAULT_THEME = { home: 'midnight', work: 'nordic' };
+
+// Default tiles per profile
+const DEFAULT_TILES_HOME = [
+  { id:101, name:'YouTube',     url:'https://youtube.com',      icon:'youtube', color:'' },
+  { id:102, name:'Gmail',       url:'https://mail.google.com',  icon:'mail',    color:'' },
+  { id:103, name:'Netflix',     url:'https://netflix.com',      icon:'play',    color:'' },
+  { id:104, name:'Google',      url:'https://google.com',       icon:'globe',   color:'' },
+  { id:105, name:'Twitter / X', url:'https://x.com',            icon:'twitter', color:'' },
+  { id:106, name:'Instagram',   url:'https://instagram.com',    icon:'camera',  color:'' },
+];
+const DEFAULT_TILES_WORK = [
+  { id:201, name:'Gmail עבודה', url:'https://mail.google.com',  icon:'mail',       color:'' },
+  { id:202, name:'LinkedIn',    url:'https://linkedin.com',     icon:'linkedin',   color:'' },
+  { id:203, name:'GitHub',      url:'https://github.com',       icon:'github',     color:'' },
+  { id:204, name:'Slack',       url:'https://slack.com',        icon:'send',       color:'' },
+  { id:205, name:'Notion',      url:'https://notion.so',        icon:'file-text',  color:'' },
+  { id:206, name:'Google Drive',url:'https://drive.google.com', icon:'cloud',      color:'' },
+];
 
 /* ════════════════════════════════════════════════════
    THEME ENGINE
 ════════════════════════════════════════════════════ */
+const LIGHT_THEMES = new Set(['light','paper','slate','lavender']);
+
 function applyTheme(id, save = true) {
   const theme = THEMES.find(t => t.id === id);
   if (!theme) return;
@@ -842,9 +1550,30 @@ function applyTheme(id, save = true) {
 
   const root = document.documentElement;
   Object.entries(theme.vars).forEach(([key, val]) => root.style.setProperty(key, val));
+  root.style.setProperty('--bg-base',      theme.vars['--app-bg']);
+  root.style.setProperty('--text-base',    theme.vars['--text-color']);
+  root.style.setProperty('--tile-default', theme.vars['--tile-bg']);
+  root.style.setProperty('--icon-color',   theme.vars['--icon-color']   || 'rgba(255,255,255,0.85)');
+  root.style.setProperty('--icon-wrap-bg', theme.vars['--icon-wrap-bg'] || 'rgba(255,255,255,0.1)');
 
-  if (save) localStorage.setItem(THEME_STORAGE_KEY, id);
+  // Light/dark mode toggle
+  const isLight = LIGHT_THEMES.has(id);
+  document.documentElement.classList.toggle('theme-light', isLight);
+
+  document.body.style.transition = 'background-color 0.5s ease';
+  document.body.style.backgroundColor = theme.vars['--app-bg'];
+
+  // Save: generic key + per-profile key
+  if (save) {
+    localStorage.setItem(THEME_STORAGE_KEY, id);
+    localStorage.setItem('eran_theme_' + activeProfile, id);
+  }
   renderThemeGrid();
+  if (document.getElementById('tiles-grid')) {
+    renderTiles();
+    renderBooks();
+    renderFiles();
+  }
 }
 
 function loadTheme() {
@@ -867,20 +1596,122 @@ function toggleThemePanel() {
 }
 
 function renderThemeGrid() {
-  const grid = document.getElementById('theme-grid');
-  grid.innerHTML = THEMES.map(t => {
-    const swatchHTML = t.swatches.map(c =>
-      `<span class="theme-swatch" style="background:${c};"></span>`).join('');
-    return `
-      <div class="theme-card ${t.id === activeThemeId ? 'active' : ''}"
-        style="background:${t.swatches[0]};border-color:${t.id === activeThemeId ? t.vars['--accent'] : 'rgba(255,255,255,0.08)'};"
-        onclick="applyTheme('${t.id}')">
-        <div class="theme-swatches">${swatchHTML}</div>
-        <div class="theme-name">${t.name}</div>
-        <div class="theme-subtitle">${t.subtitle}</div>
-      </div>
-    `;
-  }).join('');
+  const el = document.getElementById('theme-grid');
+  const dark  = THEMES.filter(t => !LIGHT_THEMES.has(t.id));
+  const light = THEMES.filter(t =>  LIGHT_THEMES.has(t.id));
+
+  function card(t) {
+    const active   = t.id === activeThemeId;
+    const isLight  = LIGHT_THEMES.has(t.id);
+    const nameclr  = isLight ? '#333' : 'rgba(255,255,255,0.88)';
+    const subclr   = isLight ? '#777' : 'rgba(255,255,255,0.36)';
+    const swatches = t.swatches.slice(0,4).map(sw =>
+      '<span class="tc-swatch" style="background:' + sw + ';border:1px solid rgba(0,0,0,0.15);"></span>'
+    ).join('');
+    const check = active ? '<span style="position:absolute;top:6px;left:8px;font-size:13px;color:' + t.vars['--accent'] + ';">✓</span>' : '';
+    const border = active ? t.vars['--accent'] : 'rgba(255,255,255,0.07)';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tc' + (active ? ' tc-active' : '');
+    btn.style.cssText = 'background:' + t.swatches[0] + ';border-color:' + border + ';position:relative;width:100%;text-align:right;font-family:inherit;';
+    btn.innerHTML = check + '<div class="tc-swatches">' + swatches + '</div>' +
+      '<div class="tc-name" style="color:' + nameclr + '">' + t.name + '</div>' +
+      '<div class="tc-sub" style="color:' + subclr + '">' + t.subtitle + '</div>';
+    btn.addEventListener('click', function() { applyTheme(t.id); });
+    return btn;
+  }
+
+  // Build DOM directly — avoids all quote-escaping issues with innerHTML
+  el.innerHTML = '';
+
+  function addSection(label, themes) {
+    const lbl = document.createElement('div');
+    lbl.className = 'theme-section-label';
+    lbl.textContent = label;
+    el.appendChild(lbl);
+
+    const row = document.createElement('div');
+    row.className = 'theme-row';
+    themes.forEach(t => row.appendChild(card(t)));
+    el.appendChild(row);
+  }
+
+  addSection('🌙 כהים', dark);
+
+  const sep = document.createElement('div');
+  sep.className = 'theme-sep';
+  el.appendChild(sep);
+
+  addSection('☀️ בהירים', light);
+}
+
+/* ════════════════════════════════════════════════════
+   STORAGE — profile-aware
+════════════════════════════════════════════════════ */
+function profileKey(profile) {
+  return 'eran_tiles_' + profile;   // eran_tiles_home | eran_tiles_work
+}
+function defaultTilesFor(profile) {
+  return profile === 'work' ? [...DEFAULT_TILES_WORK] : [...DEFAULT_TILES_HOME];
+}
+function loadTiles(profile) {
+  profile = profile || activeProfile;
+  try {
+    const raw = localStorage.getItem(profileKey(profile));
+    tiles = raw ? JSON.parse(raw) : defaultTilesFor(profile);
+  } catch { tiles = defaultTilesFor(profile); }
+}
+function saveTiles() {
+  localStorage.setItem(profileKey(activeProfile), JSON.stringify(tiles));
+}
+
+/* ════════════════════════════════════════════════════
+   PROFILE SWITCHING
+════════════════════════════════════════════════════ */
+function switchProfile(profile) {
+  if (profile === activeProfile) return;
+
+  // Save current profile tiles before switching
+  saveTiles();
+
+  activeProfile = profile;
+  localStorage.setItem('eran_active_profile', profile);
+
+  // Update toggle buttons
+  document.getElementById('btn-home').classList.toggle('active', profile === 'home');
+  document.getElementById('btn-work').classList.toggle('active', profile === 'work');
+  lucide.createIcons();
+
+  // Update section title
+  const titleEl = document.getElementById('section-title');
+  if (titleEl) titleEl.textContent = 'קישורים מהירים — ' + (profile === 'home' ? 'בית' : 'עבודה');
+
+  // Auto-switch theme: use profile's saved theme or the default for that profile
+  const savedThemeKey = 'eran_theme_' + profile;
+  const profileTheme  = localStorage.getItem(savedThemeKey) || PROFILE_DEFAULT_THEME[profile];
+  applyTheme(profileTheme, false);   // don't save to generic key
+  localStorage.setItem(savedThemeKey, profileTheme);
+
+  // Load & render the profile's tiles with slide animation
+  loadTiles(profile);
+  loadBooks(); loadFiles();
+  const grid = document.getElementById('tiles-grid');
+  grid.classList.remove('tiles-switching');
+  void grid.offsetWidth; // force reflow
+  grid.classList.add('tiles-switching');
+  renderTiles();
+  renderBooks();
+  renderFiles();
+  setTimeout(() => grid.classList.remove('tiles-switching'), 600);
+}
+
+function loadActiveProfile() {
+  activeProfile = localStorage.getItem('eran_active_profile') || 'home';
+  // Sync toggle buttons
+  document.getElementById('btn-home').classList.toggle('active', activeProfile === 'home');
+  document.getElementById('btn-work').classList.toggle('active', activeProfile === 'work');
+  const titleEl = document.getElementById('section-title');
+  if (titleEl) titleEl.textContent = 'קישורים מהירים — ' + (activeProfile === 'home' ? 'בית' : 'עבודה');
 }
 
 // Close theme panel on outside click
@@ -893,17 +1724,6 @@ document.addEventListener('click', e => {
     document.getElementById('theme-fab').classList.remove('open');
   }
 });
-
-/* ════════════════════════════════════════════════════
-   STORAGE
-════════════════════════════════════════════════════ */
-function loadTiles() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    tiles = raw ? JSON.parse(raw) : [...DEFAULT_TILES];
-  } catch { tiles = [...DEFAULT_TILES]; }
-}
-function saveTiles() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tiles)); }
 
 /* ════════════════════════════════════════════════════
    CLOCK & GREETING
@@ -937,102 +1757,8 @@ function doSearch(e) {
   if (q) window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank');
 }
 
-/* ════════════════════════════════════════════════════
-   WEATHER
-════════════════════════════════════════════════════ */
-async function fetchWeather() {
-  const loadEl = document.getElementById('weather-loading');
-  const contEl = document.getElementById('weather-content');
-  const errEl  = document.getElementById('weather-error');
-  const hintEl = document.getElementById('weather-hint');
 
-  if (WEATHER_API_KEY === 'YOUR_API_KEY') {
-    loadEl.style.display  = 'none';
-    errEl.textContent     = '⚠️ לא הוגדר API Key';
-    errEl.style.display   = 'block';
-    hintEl.style.display  = 'block';
-    return;
-  }
-  loadEl.style.display  = 'block';
-  contEl.style.display  = 'none';
-  errEl.style.display   = 'none';
-  try {
-    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(WEATHER_CITY)}&appid=${WEATHER_API_KEY}&units=metric&lang=he`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const d = await res.json();
-    document.getElementById('weather-temp').textContent     = Math.round(d.main.temp);
-    document.getElementById('weather-desc').textContent     = d.weather[0].description;
-    document.getElementById('weather-city').textContent     = d.name;
-    document.getElementById('weather-feels').textContent    = Math.round(d.main.feels_like);
-    document.getElementById('weather-humidity').textContent = d.main.humidity;
-    document.getElementById('weather-wind').textContent     = `${Math.round(d.wind.speed * 3.6)} קמ"ש`;
-    document.getElementById('weather-sky').textContent      = d.clouds.all < 20 ? 'שמיים בהירים' : d.clouds.all < 60 ? 'מעונן חלקית' : 'מעונן';
-    document.getElementById('weather-icon-wrap').textContent = WX_ICONS[d.weather[0].icon] || '🌡️';
-    loadEl.style.display  = 'none';
-    contEl.style.display  = 'block';
-    lucide.createIcons();
-  } catch(err) {
-    loadEl.style.display  = 'none';
-    errEl.textContent     = `שגיאה: ${err.message}`;
-    errEl.style.display   = 'block';
-  }
-}
 
-/* ════════════════════════════════════════════════════
-   NEWS
-════════════════════════════════════════════════════ */
-const NEWS_RSS = 'https://www.ynet.co.il/Integration/StoryRss2.xml';
-function timeAgo(ds) {
-  if (!ds) return '';
-  const s = (Date.now() - new Date(ds)) / 1000;
-  if (s < 60) return 'עכשיו';
-  if (s < 3600) return `${Math.floor(s/60)}ד'`;
-  if (s < 86400) return `${Math.floor(s/3600)}ש'`;
-  return `${Math.floor(s/86400)}י'`;
-}
-
-async function fetchNews() {
-  const loadEl  = document.getElementById('news-loading');
-  const errEl   = document.getElementById('news-error');
-  const listEl  = document.getElementById('news-list');
-  const icon    = document.getElementById('news-refresh-icon');
-  icon.classList.add('spinning');
-  loadEl.style.display  = 'block';
-  errEl.style.display   = 'none';
-  listEl.innerHTML      = '';
-  try {
-    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(NEWS_RSS)}&count=7`);
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    if (data.status !== 'ok') throw new Error();
-    loadEl.style.display = 'none';
-    data.items.forEach(item => {
-      const a = document.createElement('a');
-      a.className = 'news-item';
-      a.href = item.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
-      const title = item.title.replace(/<[^>]*>/g,'').trim();
-      a.innerHTML = `<span class="news-dot"></span><span class="news-headline">${title}</span><span class="news-time">${timeAgo(item.pubDate)}</span>`;
-      listEl.appendChild(a);
-    });
-    buildTicker(data.items);
-  } catch {
-    loadEl.style.display  = 'none';
-    errEl.textContent     = 'שגיאה בטעינת חדשות.';
-    errEl.style.display   = 'block';
-  }
-  icon.classList.remove('spinning');
-}
-
-/* ════════════════════════════════════════════════════
-   TICKER
-════════════════════════════════════════════════════ */
-function buildTicker(items) {
-  const html = items.map(i => {
-    const t = i.title.replace(/<[^>]*>/g,'').trim();
-    return `<a class="ticker-item" href="${i.link}" target="_blank" rel="noopener noreferrer"><span style="color:var(--accent);opacity:.5;">◆</span> ${t}</a>`;
-  }).join('');
-  document.getElementById('ticker-inner').innerHTML = html + html;
-}
 
 /* ════════════════════════════════════════════════════
    TILES
@@ -1045,23 +1771,24 @@ function renderTiles() {
     const wrap = document.createElement('div');
     wrap.className = 'tile-wrap fade-up';
     wrap.style.animationDelay = `${idx * 0.04}s`;
-    wrap.innerHTML = buildTileHTML(tile);
+    wrap.innerHTML = buildTileHTML(tile, idx);
     grid.appendChild(wrap);
   });
   const ph = document.createElement('div');
   ph.className = 'tile-add-placeholder fade-up';
   ph.style.animationDelay = `${tiles.length * 0.04}s`;
   ph.onclick = () => openModal(null);
-  ph.innerHTML = `<i data-lucide="plus" style="width:18px;height:18px;"></i><span>הוסף</span>`;
+  ph.innerHTML = `<i data-lucide="plus" style="width:32px;height:32px;"></i><span>הוסף אריח</span>`;
   grid.appendChild(ph);
   lucide.createIcons();
 }
 
-function buildTileHTML(tile) {
+function buildTileHTML(tile, index) {
   const clean = tile.url.replace(/^https?:\/\//,'').replace(/\/$/,'');
+  const bg    = tile.color || tileDefaultColor(index);
   return `
     <button class="tile-menu-btn" id="menu-btn-${tile.id}" onclick="toggleMenu(event,${tile.id})" title="אפשרויות">
-      <i data-lucide="more-vertical" style="width:13px;height:13px;"></i>
+      <i data-lucide="more-vertical" style="width:18px;height:18px;"></i>
     </button>
     <div class="tile-dropdown" id="dropdown-${tile.id}">
       <button class="dd-item" onclick="closeMenu();openModal(${tile.id})">
@@ -1072,17 +1799,46 @@ function buildTileHTML(tile) {
         <i data-lucide="trash-2" style="width:12px;height:12px;"></i>מחק
       </button>
     </div>
-    <a class="tile" style="--tile-color:${tile.color};" href="${escapeHTML(tile.url)}" target="_blank" rel="noopener noreferrer">
+    <a class="tile" style="--tile-color:${bg};" href="${escapeHTML(tile.url)}" target="_blank" rel="noopener noreferrer">
       <div class="tile-icon-wrap">
-        <i data-lucide="${tile.icon}" style="width:19px;height:19px;color:rgba(255,255,255,.85);"></i>
+        <i data-lucide="${tile.icon}" style="width:34px;height:34px;color:var(--icon-color, rgba(255,255,255,0.85));"></i>
       </div>
       <div class="tile-name">${escapeHTML(tile.name)}</div>
-      <div class="tile-url">${escapeHTML(clean)}</div>
+
     </a>`;
 }
 
 function escapeHTML(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  let t = document.getElementById('app-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'app-toast';
+    t.style.cssText = [
+      'position:fixed','bottom:120px','left:50%',
+      'transform:translateX(-50%)','z-index:500',
+      'background:rgba(10,10,20,0.92)','backdrop-filter:blur(12px)',
+      'border:1px solid rgba(255,255,255,0.12)',
+      'color:var(--accent)','font-family:DM Sans,sans-serif',
+      'font-size:14px','font-weight:500',
+      'padding:11px 22px','border-radius:50px',
+      'box-shadow:0 8px 32px rgba(0,0,0,0.4)',
+      'transition:opacity 0.3s ease,transform 0.3s ease',
+      'pointer-events:none'
+    ].join(';');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(8px)';
+  }, 2500);
 }
 
 /* Three-dot menu */
@@ -1106,19 +1862,44 @@ function deleteTile(id) { tiles = tiles.filter(t => t.id !== id); saveTiles(); r
 /* Modal */
 function openModal(id) {
   editingId = id;
-  document.getElementById('modal-title').textContent = id === null ? 'אריח חדש' : 'עריכת אריח';
+  const isNew = id === null;
+  document.getElementById('modal-title').textContent = isNew ? 'אריח חדש' : 'עריכת אריח';
   document.getElementById('modal-overlay').classList.add('open');
-  if (id !== null) {
+
+  // Show profile selector only for new tiles
+  const pWrap = document.getElementById('profile-selector-wrap');
+  pWrap.style.display = isNew ? 'block' : 'none';
+  if (isNew) {
+    profileSel = 'current';
+    setProfileSel('current');
+    // Update label to show current profile name
+    const lbl = document.getElementById('psel-current-label');
+    if (lbl) lbl.textContent = activeProfile === 'home' ? 'בית בלבד' : 'עבודה בלבד';
+  }
+
+  if (!isNew) {
     const t = tiles.find(t => t.id === id);
     document.getElementById('f-name').value = t.name;
     document.getElementById('f-url').value  = t.url;
-    selectIcon(t.icon, false); selectColor(t.color);
+    selectIcon(t.icon, false); selectColor(t.color || '');
   } else {
     document.getElementById('f-name').value = '';
     document.getElementById('f-url').value  = '';
-    selectIcon('globe', false); selectColor('#1a3a4a');
+    selectIcon('globe', false); selectColor('');
   }
-  buildIconPicker(); buildColorSwatches(); updatePreview();
+  // reset icon search
+  const isi = document.getElementById('icon-search-input');
+  if (isi) { isi.value = ''; }
+  const iss = document.getElementById('icon-search-status');
+  if (iss) { iss.textContent = ''; }
+  buildIconPicker(null); buildColorSwatches(); updatePreview();
+  lucide.createIcons();
+}
+
+function setProfileSel(val) {
+  profileSel = val;
+  document.getElementById('psel-current').classList.toggle('sel', val === 'current');
+  document.getElementById('psel-both').classList.toggle('sel', val === 'both');
 }
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
@@ -1130,35 +1911,122 @@ function saveTile() {
   const url  = document.getElementById('f-url').value.trim();
   if (!name) { alert('אנא הכנס שם לאריח'); return; }
   if (!url)  { alert('אנא הכנס כתובת URL'); return; }
+
   if (editingId === null) {
-    tiles.push({ id: Date.now(), name, url, icon: selectedIcon, color: selectedColor });
+    // New tile
+    const newTile = { id: Date.now(), name, url, icon: selectedIcon, color: selectedColor };
+
+    if (profileSel === 'both') {
+      // Add to current profile
+      tiles.push({ ...newTile });
+      saveTiles();
+
+      // Add to the OTHER profile with a different id
+      const otherProfile = activeProfile === 'home' ? 'work' : 'home';
+      const otherKey = profileKey(otherProfile);
+      let otherTiles = [];
+      try {
+        const raw = localStorage.getItem(otherKey);
+        otherTiles = raw ? JSON.parse(raw) : defaultTilesFor(otherProfile);
+      } catch { otherTiles = defaultTilesFor(otherProfile); }
+      otherTiles.push({ ...newTile, id: Date.now() + 1 });
+      localStorage.setItem(otherKey, JSON.stringify(otherTiles));
+
+      // Show confirmation
+      const otherName = otherProfile === 'home' ? 'בית' : 'עבודה';
+      showToast(`האריח נוסף לשני הפרופילים ✓`);
+    } else {
+      tiles.push(newTile);
+      saveTiles();
+    }
   } else {
-    tiles = tiles.map(t => t.id === editingId ? {...t, name, url, icon:selectedIcon, color:selectedColor} : t);
+    // Edit existing tile
+    tiles = tiles.map(t => t.id === editingId
+      ? { ...t, name, url, icon: selectedIcon, color: selectedColor }
+      : t);
+    saveTiles();
   }
-  saveTiles(); closeModal(); renderTiles();
+  closeModal();
+  renderTiles();
 }
 
 /* Icon picker */
-function buildIconPicker() {
-  const dp = document.getElementById('icon-picker-dropdown');
-  dp.innerHTML = ICON_NAMES.map(n =>
-    `<button class="icon-opt ${n===selectedIcon?'selected':''}" onclick="selectIcon('${n}',true)" title="${n}">
+const POPULAR_ICONS = [
+  'globe','mail','github','youtube','twitter','linkedin','instagram','facebook',
+  'play','search','home','star','heart','bookmark','bell','settings',
+  'shield','briefcase','coffee','code','terminal','database','monitor','smartphone',
+  'camera','music','map','cloud','zap','send','rss','book-open',
+  'file-text','trash-2','edit-3','plus','check','x','arrow-right','external-link',
+  'lock','unlock','user','users','calendar','clock','download','upload',
+  'shopping-cart','credit-card','bar-chart','pie-chart','activity','layers',
+];
+
+function buildIconPicker(filter) {
+  const dp   = document.getElementById('icon-picker-dropdown');
+  const list = filter
+    ? POPULAR_ICONS.filter(n => n.includes(filter.toLowerCase()))
+    : POPULAR_ICONS;
+  if (list.length === 0) {
+    dp.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;font-size:12px;color:var(--text-muted);">לא נמצאו אייקונים</div>`;
+    return;
+  }
+  dp.innerHTML = list.map(n =>
+    `<button class="icon-opt ${n===selectedIcon?'selected':''}" onclick="selectIcon('${n}')" title="${n}">
       <i data-lucide="${n}" style="width:15px;height:15px;"></i></button>`).join('');
   lucide.createIcons();
 }
-function toggleIconPicker() {
-  const dp = document.getElementById('icon-picker-dropdown');
-  dp.classList.toggle('open');
-  if (dp.classList.contains('open')) buildIconPicker();
+
+function onIconSearch(val) {
+  const trimmed = val.trim().toLowerCase().replace(/\s+/g,'-');
+  const status  = document.getElementById('icon-search-status');
+  const prev    = document.getElementById('icon-search-preview');
+  const prevIcon= document.getElementById('icon-search-preview-icon');
+
+  // always update grid filter
+  buildIconPicker(trimmed || null);
+
+  if (!trimmed) {
+    status.textContent = '';
+    prev.classList.remove('valid');
+    prevIcon.setAttribute('data-lucide', selectedIcon);
+    lucide.createIcons({ nodes: [prevIcon] });
+    return;
+  }
+
+  // Try rendering the exact icon name typed
+  prevIcon.setAttribute('data-lucide', trimmed);
+  lucide.createIcons({ nodes: [prevIcon] });
+
+  // Check if lucide actually rendered it (replaces <i> with <svg>)
+  const rendered = prev.querySelector('svg');
+  if (rendered) {
+    status.innerHTML = `<span style="color:var(--accent);">✓ אייקון נמצא — לחץ Enter לבחירה</span>`;
+    prev.classList.add('valid');
+  } else {
+    status.textContent = 'לא נמצא אייקון בשם זה';
+    prev.classList.remove('valid');
+  }
 }
-function selectIcon(name, close) {
+
+function applyIconFromSearch() {
+  const val = document.getElementById('icon-search-input').value.trim().toLowerCase().replace(/\s+/g,'-');
+  if (!val) return;
+  const prev = document.getElementById('icon-search-preview');
+  if (prev.querySelector('svg')) {
+    selectIcon(val);
+    document.getElementById('icon-search-input').value = '';
+    document.getElementById('icon-search-status').textContent = '';
+    buildIconPicker(null);
+  }
+}
+
+function selectIcon(name) {
   selectedIcon = name;
-  document.getElementById('icon-trigger-label').textContent = name;
-  const ti = document.getElementById('icon-trigger-icon');
-  ti.setAttribute('data-lucide', name);
-  lucide.createIcons({ nodes: [ti] });
-  if (close) document.getElementById('icon-picker-dropdown').classList.remove('open');
   document.querySelectorAll('.icon-opt').forEach(el => el.classList.toggle('selected', el.title === name));
+  // sync search preview to selected icon
+  const prevIcon = document.getElementById('icon-search-preview-icon');
+  prevIcon.setAttribute('data-lucide', name);
+  lucide.createIcons({ nodes: [prevIcon] });
   updatePreview();
 }
 
@@ -1170,31 +2038,449 @@ function buildColorSwatches() {
 }
 function selectColor(color) {
   selectedColor = color;
-  document.getElementById('f-color-custom').value = color;
-  const rgb = `rgb(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)})`;
-  document.querySelectorAll('.color-swatch').forEach(el =>
-    el.classList.toggle('selected', el.style.background === color || el.style.background === rgb));
+  if (color) {
+    document.getElementById('f-color-custom').value = color;
+    const rgb = `rgb(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)})`;
+    document.querySelectorAll('.color-swatch').forEach(el =>
+      el.classList.toggle('selected', el.style.background === color || el.style.background === rgb));
+    document.getElementById('btn-use-theme-color').style.opacity = '0.5';
+  } else {
+    // empty = use theme color
+    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+    document.getElementById('btn-use-theme-color').style.opacity = '1';
+    document.getElementById('btn-use-theme-color').style.borderWidth = '2px';
+  }
   updatePreview();
 }
 function updatePreview() {
   document.getElementById('preview-label').textContent = document.getElementById('f-name').value || 'שם';
-  document.getElementById('tile-preview').style.background = selectedColor;
+  const previewBg = selectedColor ||
+    getComputedStyle(document.documentElement).getPropertyValue('--tile-bg').trim();
+  document.getElementById('tile-preview').style.background = previewBg;
   const pi = document.getElementById('preview-icon');
   pi.setAttribute('data-lucide', selectedIcon);
   lucide.createIcons({ nodes: [pi] });
 }
 
 /* ════════════════════════════════════════════════════
+   BOOKS & FILES — data + render + modal
+════════════════════════════════════════════════════ */
+const BOOK_COLORS = ['#1a3a4a','#2d6a4f','#3d0000','#0f3460','#4a1942','#1b4332','#370617','#2c3e50'];
+const FILE_COLORS = ['#1e293b','#1c1917','#1a1a2e','#0f3460','#1b4332','#2d3748','#292524','#1e1b4b'];
+
+let books = [];
+let files = [];
+let itemEditType    = null;   // 'book' | 'file'
+let itemEditId      = null;
+let itemColor       = '';
+let itemProfileSel  = 'current';  // 'current' | 'both'
+
+function booksKey() { return 'eran_books_' + activeProfile; }
+function filesKey() { return 'eran_files_' + activeProfile; }
+
+function loadBooks() {
+  try { books = JSON.parse(localStorage.getItem(booksKey()) || '[]'); }
+  catch { books = []; }
+}
+function saveBooks() { localStorage.setItem(booksKey(), JSON.stringify(books)); }
+function loadFiles() {
+  try { files = JSON.parse(localStorage.getItem(filesKey()) || '[]'); }
+  catch { files = []; }
+}
+function saveFiles() { localStorage.setItem(filesKey(), JSON.stringify(files)); }
+
+/* ── Smart text color based on background luminance ── */
+function getTextColorForBg(hex) {
+  if (!hex || hex.length < 4) return { text: 'rgba(255,255,255,0.92)', sub: 'rgba(255,255,255,0.38)', icon: 'rgba(255,255,255,0.85)', iconBg: 'rgba(255,255,255,0.12)' };
+  const h = hex.replace('#','');
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+  if (lum > 0.55) {
+    return { text: 'rgba(0,0,0,0.82)', sub: 'rgba(0,0,0,0.42)', icon: 'rgba(0,0,0,0.72)', iconBg: 'rgba(0,0,0,0.10)' };
+  }
+  return { text: 'rgba(255,255,255,0.92)', sub: 'rgba(255,255,255,0.38)', icon: 'rgba(255,255,255,0.85)', iconBg: 'rgba(255,255,255,0.12)' };
+}
+
+/* ── Render Books ── */
+function renderBooks() {
+  const grid  = document.getElementById('books-grid');
+  const count = document.getElementById('book-count');
+  if (!grid) return;
+  count.textContent = books.length;
+  grid.innerHTML = '';
+
+  books.forEach((b, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'book-wrap fade-up';
+    wrap.style.animationDelay = (idx * 0.04) + 's';
+
+    // 3-dot button
+    const btn = document.createElement('button');
+    btn.className = 'book-menu-btn';
+    btn.id = 'book-menu-' + b.id;
+    btn.title = 'אפשרויות';
+    btn.innerHTML = '<i data-lucide="more-vertical" style="width:13px;height:13px;"></i>';
+    btn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleItemMenu(e,'book',b.id); });
+
+    // Dropdown
+    const dd = document.createElement('div');
+    dd.className = 'tile-dropdown';
+    dd.id = 'book-dd-' + b.id;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'dd-item';
+    editBtn.innerHTML = '<i data-lucide="pencil" style="width:12px;height:12px;"></i>ערוך';
+    editBtn.addEventListener('click', function() { closeItemMenu(); openItemModal('book', b.id); });
+
+    const sep = document.createElement('div');
+    sep.className = 'dd-sep';
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'dd-item danger';
+    delBtn.innerHTML = '<i data-lucide="trash-2" style="width:12px;height:12px;"></i>מחק';
+    delBtn.addEventListener('click', function() { closeItemMenu(); deleteItem('book', b.id); });
+
+    dd.appendChild(editBtn);
+    dd.appendChild(sep);
+    dd.appendChild(delBtn);
+
+    // Book link
+    const a = document.createElement('a');
+    // Use same rotating palette as tiles when no custom color set
+    const bgColor = b.color || tileDefaultColor(idx);
+    const tc = getTextColorForBg(bgColor);
+    a.className = 'book';
+    a.style.cssText = 'background:' + bgColor + ';--book-text:' + tc.text + ';--book-sub:' + tc.sub + ';--book-icon-bg:' + tc.iconBg;
+    a.href = b.url || '#';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    const shortUrl = (b.url || '').replace(/^.*[/\\]/, '').slice(0, 22);
+    a.innerHTML = '<div class="book-spine"></div>'
+      + '<div class="book-front">'
+      + '<div class="book-icon"><i data-lucide="folder-open" style="width:18px;height:18px;color:' + tc.icon + ';"></i></div>'
+      + '<div class="book-title">' + escapeHTML(b.name) + '</div>'
+
+      + '</div>';
+
+    wrap.appendChild(btn);
+    wrap.appendChild(dd);
+    wrap.appendChild(a);
+    grid.appendChild(wrap);
+  });
+
+  const ph = document.createElement('div');
+  ph.className = 'book-add fade-up';
+  ph.style.animationDelay = (books.length * 0.04) + 's';
+  ph.addEventListener('click', function() { openItemModal('book', null); });
+  ph.innerHTML = '<i data-lucide="plus" style="width:24px;height:24px;"></i><span>הוסף</span>';
+  grid.appendChild(ph);
+  lucide.createIcons();
+}
+
+/* ── Render Files ── */
+function renderFiles() {
+  const grid  = document.getElementById('files-grid');
+  const count = document.getElementById('file-count');
+  if (!grid) return;
+  count.textContent = files.length;
+  grid.innerHTML = '';
+
+  const iconMap = { pdf:'file-text', doc:'file-text', docx:'file-text',
+                    xls:'bar-chart', xlsx:'bar-chart', ppt:'layers', pptx:'layers',
+                    txt:'align-left', zip:'archive', rar:'archive',
+                    jpg:'image', jpeg:'image', png:'image', gif:'image', mp4:'play' };
+
+  files.forEach((f, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'file-wrap fade-up';
+    wrap.style.animationDelay = (idx * 0.04) + 's';
+
+    const btn = document.createElement('button');
+    btn.className = 'file-menu-btn';
+    btn.id = 'file-menu-' + f.id;
+    btn.title = 'אפשרויות';
+    btn.innerHTML = '<i data-lucide="more-vertical" style="width:13px;height:13px;"></i>';
+    btn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleItemMenu(e,'file',f.id); });
+
+    const dd = document.createElement('div');
+    dd.className = 'tile-dropdown';
+    dd.id = 'file-dd-' + f.id;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'dd-item';
+    editBtn.innerHTML = '<i data-lucide="pencil" style="width:12px;height:12px;"></i>ערוך';
+    editBtn.addEventListener('click', function() { closeItemMenu(); openItemModal('file', f.id); });
+
+    const sep2 = document.createElement('div');
+    sep2.className = 'dd-sep';
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'dd-item danger';
+    delBtn.innerHTML = '<i data-lucide="trash-2" style="width:12px;height:12px;"></i>מחק';
+    delBtn.addEventListener('click', function() { closeItemMenu(); deleteItem('file', f.id); });
+
+    dd.appendChild(editBtn);
+    dd.appendChild(sep2);
+    dd.appendChild(delBtn);
+
+    const fileBg = f.color || tileDefaultColor(idx);
+    const ftc = getTextColorForBg(fileBg);
+    const a = document.createElement('a');
+    a.className = 'file';
+    a.style.cssText = '--file-color:' + fileBg + ';--file-text:' + ftc.text + ';--file-sub:' + ftc.sub;
+    a.href = f.url || '#';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    const ext   = (f.url || '').split('.').pop().toLowerCase();
+    const icon  = iconMap[ext] || 'file';
+    const short = (f.url || '').replace(/^.*[/\\]/, '').slice(0, 28) || (f.url || '');
+    a.innerHTML = '<div class="file-icon"><i data-lucide="' + icon + '" style="width:28px;height:28px;color:' + ftc.icon + ';"></i></div>'
+      + '<div class="file-title">' + escapeHTML(f.name) + '</div>'
+;
+
+    wrap.appendChild(btn);
+    wrap.appendChild(dd);
+    wrap.appendChild(a);
+    grid.appendChild(wrap);
+  });
+
+  const ph2 = document.createElement('div');
+  ph2.className = 'file-add fade-up';
+  ph2.style.animationDelay = (files.length * 0.04) + 's';
+  ph2.addEventListener('click', function() { openItemModal('file', null); });
+  ph2.innerHTML = '<i data-lucide="plus" style="width:22px;height:22px;"></i><span>הוסף</span>';
+  grid.appendChild(ph2);
+  lucide.createIcons();
+}
+
+
+
+/* ── Item 3-dot menu ── */
+let openItemMenuType = null;
+let openItemMenuId   = null;
+
+function toggleItemMenu(e, type, id) {
+  e.stopPropagation();
+  const sameMenu = openItemMenuType === type && openItemMenuId === id;
+  closeItemMenu();
+  if (sameMenu) return;
+  openItemMenuType = type; openItemMenuId = id;
+  const dd  = document.getElementById(type + '-dd-' + id);
+  const btn = document.getElementById(type + '-menu-' + id);
+  if (dd)  dd.classList.add('open');
+  if (btn) btn.classList.add('menu-open');
+}
+function closeItemMenu() {
+  if (!openItemMenuType) return;
+  const dd  = document.getElementById(openItemMenuType + '-dd-' + openItemMenuId);
+  const btn = document.getElementById(openItemMenuType + '-menu-' + openItemMenuId);
+  if (dd)  dd.classList.remove('open');
+  if (btn) btn.classList.remove('menu-open');
+  openItemMenuType = null; openItemMenuId = null;
+}
+document.addEventListener('click', () => closeItemMenu());
+
+function deleteItem(type, id) {
+  if (type === 'book') { books = books.filter(b => b.id !== id); saveBooks(); renderBooks(); }
+  else                  { files = files.filter(f => f.id !== id); saveFiles(); renderFiles(); }
+}
+
+/* ── Item modal ── */
+function openItemModal(type, id) {
+  itemEditType = type;
+  itemEditId   = id;
+  const isNew  = id === null;
+  const label  = type === 'book' ? 'ספרייה' : 'קובץ';
+  document.getElementById('item-modal-title').textContent = isNew ? ('הוסף ' + label) : ('ערוך ' + label);
+  document.getElementById('item-modal-overlay').style.display = 'flex';
+
+  // Profile selector: only for new items
+  const iWrap = document.getElementById('item-profile-selector-wrap');
+  iWrap.style.display = isNew ? 'block' : 'none';
+  if (isNew) {
+    itemProfileSel = 'current';
+    document.getElementById('ipsel-current').classList.add('sel');
+    document.getElementById('ipsel-both').classList.remove('sel');
+    const lbl = document.getElementById('ipsel-current-label');
+    if (lbl) lbl.textContent = activeProfile === 'home' ? 'בית בלבד' : 'עבודה בלבד';
+    // wire up buttons
+    document.getElementById('ipsel-current').onclick = function() {
+      itemProfileSel = 'current';
+      this.classList.add('sel');
+      document.getElementById('ipsel-both').classList.remove('sel');
+    };
+    document.getElementById('ipsel-both').onclick = function() {
+      itemProfileSel = 'both';
+      this.classList.add('sel');
+      document.getElementById('ipsel-current').classList.remove('sel');
+    };
+  }
+
+  const colors = type === 'book' ? BOOK_COLORS : FILE_COLORS;
+  const existing = isNew ? null : (type === 'book' ? books : files).find(x => x.id === id);
+
+  document.getElementById('item-f-name').value = existing ? existing.name : '';
+  document.getElementById('item-f-url').value  = existing ? existing.url  : '';
+  itemColor = existing ? (existing.color || '') : '';
+
+  // Color swatches
+  const sw = document.getElementById('item-color-swatches');
+  sw.innerHTML = '';
+  colors.forEach(col => {
+    const b2 = document.createElement('button');
+    b2.className = 'ic-sw color-swatch' + (col === itemColor ? ' selected' : '');
+    b2.style.cssText = 'background:' + col + ';' + (col === itemColor ? 'outline:2px solid var(--accent);outline-offset:2px;' : '');
+    b2.addEventListener('click', function() {
+      itemColor = col;
+      sw.querySelectorAll('.ic-sw').forEach(x => { x.style.outline = ''; x.classList.remove('selected'); });
+      b2.style.outline = '2px solid var(--accent)';
+      b2.style.outlineOffset = '2px';
+      b2.classList.add('selected');
+    });
+    sw.appendChild(b2);
+  });
+
+  lucide.createIcons();
+}
+
+function closeItemModal() {
+  document.getElementById('item-modal-overlay').style.display = 'none';
+}
+
+function saveItem() {
+  const name = document.getElementById('item-f-name').value.trim();
+  const url  = document.getElementById('item-f-url').value.trim();
+  if (!name) { alert('אנא הכנס שם'); return; }
+
+  const isNew = itemEditId === null;
+  const item  = { id: itemEditId || Date.now(), name, url, color: itemColor };
+
+  function saveToProfile(profileName, newItem) {
+    const isBook = itemEditType === 'book';
+    const key    = 'eran_' + (isBook ? 'books' : 'files') + '_' + profileName;
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(key) || '[]'); } catch { list = []; }
+    if (isNew) { list.push({ ...newItem, id: Date.now() + Math.random() }); }
+    else { list = list.map(x => x.id === itemEditId ? newItem : x); }
+    localStorage.setItem(key, JSON.stringify(list));
+  }
+
+  if (itemEditType === 'book') {
+    if (isNew) { books.push(item); }
+    else { books = books.map(b => b.id === itemEditId ? item : b); }
+    saveBooks();
+    if (isNew && itemProfileSel === 'both') {
+      const other = activeProfile === 'home' ? 'work' : 'home';
+      saveToProfile(other, { ...item, id: Date.now() + 1 });
+      showToast('הספרייה נוספה לשני הפרופילים ✓');
+    }
+    renderBooks();
+  } else {
+    if (isNew) { files.push(item); }
+    else { files = files.map(f => f.id === itemEditId ? item : f); }
+    saveFiles();
+    if (isNew && itemProfileSel === 'both') {
+      const other = activeProfile === 'home' ? 'work' : 'home';
+      saveToProfile(other, { ...item, id: Date.now() + 1 });
+      showToast('הקובץ נוסף לשני הפרופילים ✓');
+    }
+    renderFiles();
+  }
+  closeItemModal();
+}
+
+/* ════════════════════════════════════════════════════
+   USER NAME
+════════════════════════════════════════════════════ */
+function setUserName(name, save) {
+  if (!name || !name.trim()) return;
+  const n = name.trim();
+  const el = document.getElementById('user-name');
+  const footer = document.getElementById('footer-name');
+  const titleEl = document.getElementById('page-title');
+  if (el) el.textContent = n;
+  if (footer) footer.textContent = n;
+  if (titleEl) titleEl.textContent = 'הדשבורד של ' + n;
+  if (save !== false) localStorage.setItem('eran_user_name', n);
+}
+
+function editUserName() {
+  const current = document.getElementById('user-name').textContent;
+  // Create inline input replacing the name
+  const el = document.getElementById('user-name');
+  const input = document.createElement('input');
+  input.value = current;
+  input.dir = 'rtl';
+  input.style.cssText = [
+    'background:transparent',
+    'border:none',
+    'border-bottom:2px solid var(--accent)',
+    'color:var(--accent)',
+    'font-size:inherit',
+    'font-weight:inherit',
+    'font-family:inherit',
+    'outline:none',
+    'width:' + Math.max(80, current.length * 20) + 'px',
+    'text-align:right',
+    'padding:0 2px',
+  ].join(';');
+
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+
+  function done() {
+    const newName = input.value.trim() || current;
+    // Restore span
+    const span = document.createElement('span');
+    span.id = 'user-name';
+    span.style.cssText = 'color:var(--accent);cursor:pointer;border-bottom:1px dashed transparent;transition:border-color 0.2s;';
+    span.title = 'לחץ לעריכת השם';
+    span.addEventListener('click', editUserName);
+    span.addEventListener('mouseenter', function() { this.style.borderBottomColor = 'var(--accent)'; });
+    span.addEventListener('mouseleave', function() { this.style.borderBottomColor = 'transparent'; });
+    input.replaceWith(span);
+    setUserName(newName, true);
+    showToast('השם עודכן ל: ' + newName + ' ✓');
+  }
+
+  input.addEventListener('blur', done);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = current; input.blur(); }
+  });
+}
+
+/* ════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════ */
-loadTheme();        // ← apply saved theme first (before render)
-loadTiles();
+// 0. Load user name
+(function() {
+  const saved = localStorage.getItem('eran_user_name');
+  if (saved) setUserName(saved, false);
+})();
+
+// 1. Restore active profile
+activeProfile = localStorage.getItem('eran_active_profile') || 'home';
+
+// 2. Load correct theme for this profile
+const _initTheme = localStorage.getItem('eran_theme_' + activeProfile)
+                || PROFILE_DEFAULT_THEME[activeProfile];
+applyTheme(_initTheme, false);
+
+// 3. Load & render tiles + books + files
+loadTiles(activeProfile);
 renderTiles();
+loadBooks(); renderBooks();
+loadFiles(); renderFiles();
+
+// 4. Sync toggle UI
+loadActiveProfile();
+
+// 5. Clock
 updateClock();
 setInterval(updateClock, 1000);
-fetchWeather();
-fetchNews();
-setInterval(fetchNews, 10 * 60 * 1000);
+
 lucide.createIcons();
 </script>
 </body>
